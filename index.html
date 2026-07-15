@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>客戶需求分析表系統</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Mermaid JS -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.4.0/dist/mermaid.min.js"></script>
+    <!-- JSZip -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    
+    <style>
+        .view-section { transition: all 0.3s ease-in-out; }
+        .view-hidden { opacity: 0; transform: translateY(10px); pointer-events: none; position: absolute; top: 0; left: 0; width: 100%; z-index: 0; display: none; }
+        .view-active { opacity: 1; transform: translateY(0); position: relative; z-index: 10; display: block; }
+        
+        textarea { scrollbar-width: none; -ms-overflow-style: none; }
+        textarea::-webkit-scrollbar { display: none; }
+        
+        .form-input { width: 100%; border-radius: 0.375rem; border-color: #d1d5db; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); padding: 0.5rem 0.75rem; outline: none; border-width: 1px; transition: all 0.2s; }
+        .form-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.5); }
+        .form-label { display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.25rem; }
+        
+        svg { max-width: 100%; height: auto; }
+        .skeleton-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+
+        /* Dashboard 專用表格樣式 */
+        .dashboard-table th { background-color: #eff6ff; color: #1e3a8a; font-weight: bold; padding: 0.75rem; border: 1px solid #bfdbfe; text-align: center; }
+        .dashboard-table td { padding: 0.75rem; border: 1px solid #e5e7eb; vertical-align: top; white-space: pre-wrap; font-size: 0.875rem; color: #374151; }
+        .dashboard-table .row-header { background-color: #f3f4f6; color: #4b5563; font-weight: bold; text-align: center; vertical-align: middle; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen font-sans pb-20">
+
+    <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold text-blue-600 mr-8 tracking-wide">
+                        <i class="fa-solid fa-compass mr-2"></i>客戶需求分析表
+                    </span>
+                    <div class="hidden sm:flex space-x-8" id="nav-menu">
+                        <button data-target="form" class="nav-btn inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors text-blue-600 border-blue-600">
+                            <i class="fa-solid fa-pen-to-square mr-2"></i>新增/編輯面談
+                        </button>
+                        <button data-target="dashboard" class="nav-btn inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors">
+                            <i class="fa-solid fa-chart-pie mr-2"></i>個案儀表板
+                        </button>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <span id="sync-badge" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 shadow-inner transition-colors duration-300">
+                        <i class="fa-solid fa-cloud mr-1.5"></i>系統就緒
+                    </span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
+        
+        <!-- ========================================== -->
+        <!-- View 1: 新增與編輯面談表單 (輸入模式) -->
+        <!-- ========================================== -->
+        <section id="form" class="view-section view-active space-y-6">
+            
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 sticky top-20 z-40">
+                <div class="flex-grow relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-gray-400"></i>
+                    <input type="search" id="searchClient" placeholder="輸入手機號碼尋找舊客戶 (輸入後按下 Enter)，或直接填寫下方表單建立新客戶..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                </div>
+                <button id="btn_new_client" class="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg font-medium hover:bg-blue-100 transition-colors border border-blue-200">
+                    <i class="fa-solid fa-user-plus mr-2"></i>清空表單
+                </button>
+            </div>
+
+            <!-- 面談模式狀態提示列 -->
+            <div id="form_mode_banner" class="hidden border rounded-xl p-4 mb-6 flex justify-between items-center shadow-sm transition-colors">
+                <div class="flex items-center gap-4">
+                    <div id="form_mode_icon" class="text-3xl"></div>
+                    <div>
+                        <h4 id="form_mode_title" class="font-bold text-lg mb-0.5">狀態標題</h4>
+                        <p id="form_mode_desc" class="text-sm">狀態說明文字</p>
+                    </div>
+                </div>
+                <button id="btn_force_new" class="hidden bg-white border border-amber-300 text-amber-700 hover:bg-amber-100 px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors cursor-pointer">
+                    <i class="fa-solid fa-file-medical mr-2"></i>強制開新面談
+                </button>
+            </div>
+
+            <input type="hidden" id="current_client_uuid" value="">
+            <input type="hidden" id="current_record_id" value="">
+
+            <!-- 區塊一 -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h3 class="text-lg font-bold text-gray-800 border-l-4 border-blue-500 pl-3 mb-5">區塊一：基本資料與狀態</h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div><label class="form-label text-blue-700 font-bold">客戶姓名</label><input type="text" class="form-input bg-blue-50 auto-save-trigger" id="c_name" placeholder="王大明"></div>
+                    <div><label class="form-label text-blue-700 font-bold">性別</label><select class="form-input bg-blue-50 auto-save-trigger" id="c_gender"><option value="M">男</option><option value="F">女</option></select></div>
+                    <div><label class="form-label text-blue-700 font-bold">手機號碼 (主鍵)</label><input type="tel" class="form-input bg-blue-50 auto-save-trigger" id="c_phone" placeholder="0912345678"></div>
+                    <div><label class="form-label">婚姻狀態</label><select class="form-input auto-save-trigger" id="c_marital"><option value="S">未婚</option><option value="M">已婚</option></select></div>
+                    <div><label class="form-label">出生年月日</label><input type="date" class="form-input auto-save-trigger" id="c_dob"></div>
+                    <div><label class="form-label">職業 / 收入</label><input type="text" class="form-input auto-save-trigger" id="c_job"></div>
+                    <div><label class="form-label text-emerald-700 font-bold">本次訪談日期</label><input type="date" class="form-input bg-emerald-50 auto-save-trigger" id="r_date"></div>
+                    <div><label class="form-label">階段推進</label>
+                        <div class="flex items-center space-x-2">
+                            <select class="form-input auto-save-trigger" id="r_stage_pre"><option value="C1">C1</option><option value="C2">C2</option><option value="C3">C3</option><option value="C4">C4</option><option value="C5">C5</option><option value="C6">C6</option><option value="C7">C7</option></select>
+                            <i class="fa-solid fa-arrow-right text-gray-400"></i>
+                            <select class="form-input auto-save-trigger" id="r_stage_post"><option value="C1">C1</option><option value="C2">C2</option><option value="C3">C3</option><option value="C4">C4</option><option value="C5">C5</option><option value="C6">C6</option><option value="C7">C7</option></select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 區塊二 -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 relative overflow-hidden">
+                <h3 class="text-lg font-bold text-gray-800 border-l-4 border-blue-500 pl-3 mb-5">區塊二：互動式家族關係圖</h3>
+                <div class="flex flex-wrap items-end gap-3 mb-5 bg-indigo-50/50 p-4 rounded-lg border border-indigo-100">
+                    <div class="flex-grow max-w-[150px]">
+                        <label class="form-label text-xs text-indigo-700 font-bold"><i class="fa-solid fa-bullseye mr-1"></i>基準點</label>
+                        <select id="ft_target" class="form-input text-sm py-1.5 font-medium text-indigo-900 border-indigo-300 bg-white"><option value="0">客戶本人</option></select>
+                    </div>
+                    <div>
+                        <label class="form-label text-xs text-indigo-700">的... (稱謂)</label>
+                        <select id="ft_role" class="form-input text-sm py-1.5 w-24"><option value="配偶">配偶</option><option value="子女">子女</option><option value="父親">父親</option><option value="母親">母親</option><option value="兄弟姊妹">兄弟姊妹</option></select>
+                    </div>
+                    <div class="flex-grow max-w-[150px]">
+                        <label class="form-label text-xs text-indigo-700">姓名</label>
+                        <input type="text" id="ft_name" class="form-input text-sm py-1.5" placeholder="例如：陳小美">
+                    </div>
+                    <div>
+                        <label class="form-label text-xs text-indigo-700">性別</label>
+                        <select id="ft_gender" class="form-input text-sm py-1.5 w-20"><option value="M">男</option><option value="F">女</option></select>
+                    </div>
+                    <div>
+                        <label class="form-label text-xs text-indigo-700">年齡(選填)</label>
+                        <input type="number" id="ft_age" class="form-input text-sm py-1.5 w-16" placeholder="歲">
+                    </div>
+                    <button id="ft_add_btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium shadow-sm transition-colors mb-[1px]"><i class="fa-solid fa-diagram-project mr-1.5"></i>新增</button>
+                    <button id="ft_clear_btn" class="bg-white hover:bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors mb-[1px] ml-auto"><i class="fa-solid fa-trash-can"></i>清空</button>
+                </div>
+                <div id="familyGraphContainer" class="min-h-[300px] bg-white border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center p-4 relative overflow-hidden">
+                    <div id="familyGraph" class="w-full flex justify-center text-gray-400 text-sm">請先輸入客戶姓名。</div>
+                </div>
+            </div>
+
+            <!-- 區塊三 (完整補齊 s_life, f_asset) -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h3 class="text-lg font-bold text-gray-800 border-l-4 border-blue-500 pl-3 mb-5">區塊三：現況釐清 & 財務觀念</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div><label class="form-label text-blue-700"><i class="fa-solid fa-briefcase mr-1"></i>工作現況</label><textarea class="form-input resize-none min-h-[50px] auto-save-trigger" id="s_work" rows="1"></textarea></div>
+                        <div><label class="form-label text-blue-700"><i class="fa-solid fa-house mr-1"></i>家庭現況</label><textarea class="form-input resize-none min-h-[50px] auto-save-trigger" id="s_family" rows="1"></textarea></div>
+                        <div><label class="form-label text-blue-700"><i class="fa-solid fa-mug-hot mr-1"></i>生活現況</label><textarea class="form-input resize-none min-h-[50px] auto-save-trigger" id="s_life" rows="1"></textarea></div>
+                    </div>
+                    <div class="space-y-4">
+                        <div><label class="form-label text-emerald-700"><i class="fa-solid fa-coins mr-1"></i>收支管理</label><textarea class="form-input resize-none min-h-[50px] auto-save-trigger" id="f_income" rows="1"></textarea></div>
+                        <div><label class="form-label text-emerald-700"><i class="fa-solid fa-chart-line mr-1"></i>理財經驗與資產</label><textarea class="form-input resize-none min-h-[50px] auto-save-trigger" id="f_asset" rows="1"></textarea></div>
+                        <div><label class="form-label text-red-600 font-bold"><i class="fa-solid fa-life-ring mr-1"></i>備用水源 (風險承擔能力)</label><textarea class="form-input resize-none min-h-[50px] border-red-200 focus:border-red-500 bg-red-50/30 auto-save-trigger" id="f_risk" rows="1"></textarea></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 區塊四 -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h3 class="text-lg font-bold text-gray-800 border-l-4 border-blue-500 pl-3 mb-5">區塊四：LIMRA 五大核心目標框架</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-5 gap-3 bg-gray-50 p-4 rounded-lg border border-gray-100">
+                    <div><label class="form-label text-center font-bold mb-2 text-indigo-800">醫療保障</label><textarea class="form-input resize-none min-h-[80px] text-sm auto-save-trigger border-indigo-200" id="limra_1"></textarea></div>
+                    <div><label class="form-label text-center font-bold mb-2 text-indigo-800">家庭保障</label><textarea class="form-input resize-none min-h-[80px] text-sm auto-save-trigger border-indigo-200" id="limra_2"></textarea></div>
+                    <div><label class="form-label text-center font-bold mb-2 text-indigo-800">子女教育</label><textarea class="form-input resize-none min-h-[80px] text-sm auto-save-trigger border-indigo-200" id="limra_3"></textarea></div>
+                    <div><label class="form-label text-center font-bold mb-2 text-indigo-800">財務自由</label><textarea class="form-input resize-none min-h-[80px] text-sm auto-save-trigger border-indigo-200" id="limra_4"></textarea></div>
+                    <div><label class="form-label text-center font-bold mb-2 text-indigo-800">資產傳承</label><textarea class="form-input resize-none min-h-[80px] text-sm auto-save-trigger border-indigo-200" id="limra_5"></textarea></div>
+                </div>
+            </div>
+
+            <!-- 區塊五：4x4 夢想矩陣 (完整補齊) -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <h3 class="text-lg font-bold text-gray-800 border-l-4 border-blue-500 pl-3 mb-5">區塊五：夢想藍圖深掘矩陣 (4x4 Matrix)</h3>
+                <div class="overflow-x-auto pb-2">
+                    <div class="min-w-[800px] grid grid-cols-5 gap-2 text-sm">
+                        <!-- Header -->
+                        <div class="font-bold text-gray-400 flex items-end pb-2 justify-center border-b-2 border-gray-200">維度 \ 深掘</div>
+                        <div class="font-bold text-center text-blue-800 bg-blue-50 py-2 rounded-t-md">結論想法 (揣摩)</div>
+                        <div class="font-bold text-center text-blue-800 bg-blue-50 py-2 rounded-t-md">確認夢想 (心聲)</div>
+                        <div class="font-bold text-center text-blue-800 bg-blue-50 py-2 rounded-t-md">轉折語</div>
+                        <div class="font-bold text-center text-blue-800 bg-blue-50 py-2 rounded-t-md">擴大急迫性</div>
+                        
+                        <!-- Row 1 -->
+                        <div class="font-bold text-gray-700 bg-gray-100 flex items-center justify-center p-2 rounded-l-md text-center">在乎的人</div>
+                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_1_1"></textarea></div>
+                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_1_2"></textarea></div>
+                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_1_3"></textarea></div>
+                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_1_4"></textarea></div>
+
+                        <!-- Row 2 -->
+                        <div class="font-bold text-gray-700 bg-gray-100 flex items-center justify-center p-2 rounded-l-md text-center">照顧好<br>自己</div>
+                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_2_1"></textarea></div>
+                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_2_2"></textarea></div>
+                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_2_3"></textarea></div>
+                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_2_4"></textarea></div>
+
+                        <!-- Row 3 -->
+                        <div class="font-bold text-gray-700 bg-gray-100 flex items-center justify-center p-2 rounded-l-md text-center">渴望完成<br>的夢想</div>
+                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_3_1"></textarea></div>
+                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_3_2"></textarea></div>
+                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_3_3"></textarea></div>
+                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_3_4"></textarea></div>
+
+                        <!-- Row 4 -->
+                        <div class="font-bold text-gray-700 bg-gray-100 flex items-center justify-center p-2 rounded-l-md text-center">擔心的事</div>
+                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_4_1"></textarea></div>
+                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_4_2"></textarea></div>
+                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_4_3"></textarea></div>
+                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_4_4"></textarea></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 區塊六：策略規劃與反饋 (完整補齊) -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h3 class="text-lg font-bold text-gray-800 border-l-4 border-blue-500 pl-3 mb-5">區塊六：策略規劃與檢討反饋</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- 左半：時間軸與策略 -->
+                    <div class="space-y-4">
+                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                            <label class="form-label text-indigo-700 font-bold mb-3"><i class="fa-solid fa-timeline mr-1"></i>規劃時間軸</label>
+                            <div class="space-y-2">
+                                <div class="flex items-center"><span class="w-20 text-xs font-bold text-gray-500">現在</span><input type="text" class="form-input auto-save-trigger" id="t_now"></div>
+                                <div class="flex items-center"><span class="w-20 text-xs font-bold text-gray-500">中期(6y+)</span><input type="text" class="form-input auto-save-trigger" id="t_mid"></div>
+                                <div class="flex items-center"><span class="w-20 text-xs font-bold text-gray-500">長期(20y+)</span><input type="text" class="form-input auto-save-trigger" id="t_long"></div>
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            <div><label class="form-label text-blue-700 font-bold">切入議題與策略</label><textarea class="form-input resize-none min-h-[60px] auto-save-trigger" id="st_issue" rows="1"></textarea></div>
+                            <div><label class="form-label text-blue-700 font-bold">確認背後意義</label><textarea class="form-input resize-none min-h-[60px] auto-save-trigger" id="st_mean" rows="1"></textarea></div>
+                            <div><label class="form-label text-blue-700 font-bold">預先處理反對問題</label><textarea class="form-input resize-none min-h-[60px] auto-save-trigger" id="st_obj" rows="1"></textarea></div>
+                        </div>
+                    </div>
+                    <!-- 右半：反饋與機率 -->
+                    <div class="space-y-5">
+                        <div class="bg-orange-50 p-4 rounded-lg border border-orange-100">
+                            <label class="form-label text-orange-800 font-bold mb-3"><i class="fa-solid fa-percent mr-1"></i>簽約機率預估</label>
+                            <div class="flex space-x-6">
+                                <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="prob" value="30" class="form-radio text-blue-600 auto-save-trigger"><span class="font-medium text-gray-700">30%</span></label>
+                                <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="prob" value="70" class="form-radio text-blue-600 auto-save-trigger"><span class="font-medium text-gray-700">70%</span></label>
+                                <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="prob" value="100" class="form-radio text-blue-600 auto-save-trigger"><span class="font-medium text-gray-700">100%</span></label>
+                            </div>
+                        </div>
+                        <div><label class="form-label font-bold"><i class="fa-regular fa-comment-dots mr-1"></i>客戶回應</label><textarea class="form-input resize-none min-h-[80px] auto-save-trigger" id="fb_client" rows="2"></textarea></div>
+                        <div><label class="form-label font-bold"><i class="fa-solid fa-user-tie mr-1"></i>自我反饋</label><textarea class="form-input resize-none min-h-[80px] auto-save-trigger" id="fb_self" rows="2"></textarea></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center pt-2 text-sm text-gray-400 font-medium">系統已開啟 1.5 秒自動防抖存檔功能</div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- View 2: 個案儀表板 (討論模式：卡片與表格化) -->
+        <!-- ========================================== -->
+        <section id="dashboard" class="view-section view-hidden">
+            
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6 flex flex-wrap items-center gap-4 sticky top-20 z-30">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-users text-gray-400"></i>
+                    <select id="db_client_select" class="form-input w-48 bg-blue-50 font-medium border-blue-200"><option value="">-- 選擇客戶 --</option></select>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-gray-400"></i>
+                    <select id="db_record_select" class="form-input w-48 bg-emerald-50 font-medium border-emerald-200" disabled><option value="">-- 選擇歷史紀錄 --</option></select>
+                </div>
+                <button id="btn_export" class="ml-auto bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors font-medium shadow-sm disabled:opacity-50" disabled>
+                    <i class="fa-solid fa-file-zipper mr-2"></i>匯出 AI 分析包 (ZIP)
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- 左側：時間軸 -->
+                <div class="col-span-1 lg:col-span-3">
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 h-full max-h-[800px] overflow-y-auto">
+                        <h4 class="font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-solid fa-timeline mr-2 text-indigo-500"></i>面談軌跡</h4>
+                        <div id="db_timeline_container" class="space-y-4 pl-2 border-l-2 border-gray-100 relative">
+                            <div class="text-gray-400 text-sm ml-4">請先選擇客戶</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右側：資料檢視區 -->
+                <div class="col-span-1 lg:col-span-9 space-y-6">
+                    <div id="db_content_area" class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 min-h-[500px]">
+                        
+                        <div id="db_empty_state" class="text-center py-32">
+                            <i class="fa-solid fa-folder-open text-6xl text-gray-200 mb-4"></i>
+                            <p class="text-gray-400 font-medium text-lg">在上方選擇客戶與紀錄以檢視詳細分析表</p>
+                        </div>
+
+                        <div id="db_data_view" class="hidden space-y-8">
+                            <!-- 1. Header (包含機率徽章) -->
+                            <div class="flex justify-between items-end border-b pb-4">
+                                <div>
+                                    <div class="flex items-center gap-3 mb-1">
+                                        <h2 id="view_name" class="text-3xl font-bold text-gray-900">客戶姓名</h2>
+                                        <span id="view_prob_badge" class="px-2 py-1 rounded text-xs font-bold text-white bg-gray-400">機率未評估</span>
+                                    </div>
+                                    <p class="text-gray-500 font-medium text-sm">
+                                        <i class="fa-solid fa-phone mr-1"></i><span id="view_phone"></span> | 
+                                        <i class="fa-solid fa-briefcase mr-1 ml-2"></i><span id="view_job"></span> | 
+                                        <i class="fa-solid fa-ring mr-1 ml-2"></i><span id="view_marital"></span>
+                                    </p>
+                                </div>
+                                <div class="text-right flex flex-col items-end">
+                                    <div class="text-sm text-gray-500 mb-2">面談日期：<span id="view_date" class="font-bold text-gray-800"></span></div>
+                                    <div class="flex items-center gap-3">
+                                        <div class="inline-flex items-center px-3 py-1.5 rounded bg-blue-100 text-blue-800 font-bold text-sm">
+                                            階段：<span id="view_stage"></span>
+                                        </div>
+                                        <button id="btn_edit_record" class="inline-flex items-center px-3 py-1.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-300 transition-colors font-bold text-sm shadow-sm cursor-pointer">
+                                            <i class="fa-solid fa-pen mr-1"></i>編輯此紀錄
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 2. LIMRA 卡片 -->
+                            <div>
+                                <h4 class="font-bold text-gray-800 mb-3"><i class="fa-solid fa-layer-group mr-2 text-indigo-500"></i>LIMRA 核心目標狀態</h4>
+                                <div class="grid grid-cols-5 gap-3">
+                                    <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100"><div class="text-xs font-bold text-indigo-800 mb-1">醫療保障</div><div id="view_limra_1" class="text-sm text-gray-700 whitespace-pre-wrap"></div></div>
+                                    <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100"><div class="text-xs font-bold text-indigo-800 mb-1">家庭保障</div><div id="view_limra_2" class="text-sm text-gray-700 whitespace-pre-wrap"></div></div>
+                                    <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100"><div class="text-xs font-bold text-indigo-800 mb-1">子女教育</div><div id="view_limra_3" class="text-sm text-gray-700 whitespace-pre-wrap"></div></div>
+                                    <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100"><div class="text-xs font-bold text-indigo-800 mb-1">財務自由</div><div id="view_limra_4" class="text-sm text-gray-700 whitespace-pre-wrap"></div></div>
+                                    <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100"><div class="text-xs font-bold text-indigo-800 mb-1">資產傳承</div><div id="view_limra_5" class="text-sm text-gray-700 whitespace-pre-wrap"></div></div>
+                                </div>
+                            </div>
+
+                            <!-- 3. 4x4 矩陣 (討論模式專用表格) -->
+                            <div>
+                                <h4 class="font-bold text-gray-800 mb-3"><i class="fa-solid fa-table-cells mr-2 text-blue-500"></i>夢想藍圖深掘矩陣 (4x4)</h4>
+                                <div class="overflow-x-auto rounded-lg border border-gray-200">
+                                    <table class="w-full dashboard-table">
+                                        <thead>
+                                            <tr>
+                                                <th class="w-1/5 bg-gray-100 text-gray-600 border-gray-200">維度 \ 深掘</th>
+                                                <th class="w-1/5">結論想法</th><th class="w-1/5">確認夢想</th><th class="w-1/5">轉折語</th><th class="w-1/5">擴大急迫性</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td class="row-header">在乎的人</td><td id="v_m_1_1"></td><td id="v_m_1_2"></td><td id="v_m_1_3"></td><td id="v_m_1_4"></td></tr>
+                                            <tr><td class="row-header">照顧好自己</td><td id="v_m_2_1"></td><td id="v_m_2_2"></td><td id="v_m_2_3"></td><td id="v_m_2_4"></td></tr>
+                                            <tr><td class="row-header">渴望的夢想</td><td id="v_m_3_1"></td><td id="v_m_3_2"></td><td id="v_m_3_3"></td><td id="v_m_3_4"></td></tr>
+                                            <tr><td class="row-header">擔心的事</td><td id="v_m_4_1"></td><td id="v_m_4_2"></td><td id="v_m_4_3"></td><td id="v_m_4_4"></td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- 4. 財務現狀 & 時間軸 -->
+                            <div class="grid grid-cols-2 gap-6">
+                                <div class="space-y-4">
+                                    <h4 class="font-bold text-gray-800 border-b pb-2"><i class="fa-solid fa-clipboard-list mr-2 text-emerald-500"></i>現狀與財務</h4>
+                                    <div class="bg-gray-50 p-3 rounded text-sm"><span class="font-bold text-gray-600 block mb-1">現況 (工作/家庭/生活)</span><span id="view_status" class="whitespace-pre-wrap text-gray-800"></span></div>
+                                    <div class="bg-emerald-50 p-3 rounded text-sm border border-emerald-100"><span class="font-bold text-emerald-800 block mb-1">財務 (收支/資產/風險)</span><span id="view_finance" class="whitespace-pre-wrap text-gray-800"></span></div>
+                                </div>
+                                <div class="space-y-4">
+                                    <h4 class="font-bold text-gray-800 border-b pb-2"><i class="fa-solid fa-timeline mr-2 text-purple-500"></i>規劃時間軸</h4>
+                                    <div class="bg-purple-50 p-3 rounded text-sm border border-purple-100 space-y-2">
+                                        <div><span class="font-bold text-purple-800 inline-block w-16">現在：</span><span id="view_t_now" class="text-gray-800"></span></div>
+                                        <div><span class="font-bold text-purple-800 inline-block w-16">中期：</span><span id="view_t_mid" class="text-gray-800"></span></div>
+                                        <div><span class="font-bold text-purple-800 inline-block w-16">長期：</span><span id="view_t_long" class="text-gray-800"></span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 5. 策略與反饋 -->
+                            <div class="grid grid-cols-2 gap-6">
+                                <div class="space-y-4">
+                                    <h4 class="font-bold text-gray-800 border-b pb-2"><i class="fa-solid fa-chess-knight mr-2 text-orange-500"></i>面談策略</h4>
+                                    <div class="bg-orange-50 p-3 rounded text-sm border border-orange-100"><span class="font-bold text-orange-800 block mb-1">切入議題 & 背後意義</span><span id="view_st_issue" class="whitespace-pre-wrap text-gray-800"></span></div>
+                                    <div class="bg-red-50 p-3 rounded text-sm border border-red-100"><span class="font-bold text-red-800 block mb-1">反對問題預判</span><span id="view_st_obj" class="whitespace-pre-wrap text-gray-800"></span></div>
+                                </div>
+                                <div class="space-y-4">
+                                    <h4 class="font-bold text-gray-800 border-b pb-2"><i class="fa-solid fa-comments mr-2 text-pink-500"></i>會後反饋</h4>
+                                    <div class="bg-gray-50 p-3 rounded text-sm border border-gray-200"><span class="font-bold text-gray-700 block mb-1">客戶回應</span><span id="view_fb_client" class="whitespace-pre-wrap text-gray-800"></span></div>
+                                    <div class="bg-gray-50 p-3 rounded text-sm border border-gray-200"><span class="font-bold text-gray-700 block mb-1">自我反饋</span><span id="view_fb_self" class="whitespace-pre-wrap text-gray-800"></span></div>
+                                </div>
+                            </div>
+
+                            <!-- 6. 家族圖 -->
+                            <div>
+                                <h4 class="font-bold text-gray-800 mb-3"><i class="fa-solid fa-diagram-project mr-2 text-blue-500"></i>家族結構圖 (當次快照)</h4>
+                                <div id="view_family_graph" class="bg-white border-2 border-dashed border-gray-200 rounded-lg p-4 flex justify-center overflow-x-auto min-h-[250px]"></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="toast-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+
+    <script>
+        // ==========================================
+        // 模組 1：UI 與表單工具
+        // ==========================================
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const icon = type === 'success' ? '<i class="fa-solid fa-circle-check text-green-500"></i>' : '<i class="fa-solid fa-circle-exclamation text-red-500"></i>';
+            toast.className = `flex items-center bg-white border border-gray-200 rounded-lg shadow-lg px-4 py-3 transform transition-all duration-300 translate-y-10 opacity-0 mb-2`;
+            toast.innerHTML = `<div class="mr-3 text-lg">${icon}</div><div class="text-sm font-medium text-gray-700">${message}</div>`;
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.remove('translate-y-10', 'opacity-0'));
+            setTimeout(() => { toast.classList.add('opacity-0', 'translate-x-10'); setTimeout(() => toast.remove(), 300); }, 2500);
+        }
+
+        document.addEventListener('input', function (e) {
+            if (e.target.tagName.toLowerCase() === 'textarea') {
+                e.target.style.height = 'auto';
+                e.target.style.height = (e.target.scrollHeight) + 'px';
+            }
+        }, false);
+
+        function navigateTo(targetId) {
+            document.querySelectorAll('.view-section').forEach(sec => {
+                if (sec.id === targetId) { sec.classList.remove('view-hidden'); sec.classList.add('view-active'); } 
+                else { sec.classList.remove('view-active'); sec.classList.add('view-hidden'); }
+            });
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                if (btn.dataset.target === targetId) { btn.classList.add('text-blue-600', 'border-b-2', 'border-blue-600'); btn.classList.remove('text-gray-500', 'border-transparent'); } 
+                else { btn.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600'); btn.classList.add('text-gray-500', 'border-transparent'); }
+            });
+            if (targetId === 'dashboard') loadDashboardClients();
+        }
+        document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', (e) => navigateTo(e.currentTarget.dataset.target)));
+
+        function updateFormBanner(mode, clientName, dateStr) {
+            const banner = document.getElementById('form_mode_banner');
+            const icon = document.getElementById('form_mode_icon');
+            const title = document.getElementById('form_mode_title');
+            const desc = document.getElementById('form_mode_desc');
+            const btnNew = document.getElementById('btn_force_new');
+            const safeName = clientName || '客戶';
+            
+            banner.classList.remove('hidden', 'bg-blue-50', 'border-blue-200', 'bg-amber-50', 'border-amber-300');
+            
+            if (mode === 'new') {
+                banner.classList.add('bg-blue-50', 'border-blue-200');
+                icon.innerHTML = '<i class="fa-solid fa-file-circle-plus text-blue-500"></i>';
+                title.className = 'font-bold text-blue-800 text-lg mb-0.5'; desc.className = 'text-sm text-blue-600';
+                title.innerText = `正在為 [${safeName}] 建立全新面談`;
+                desc.innerText = '儲存後系統將為您獨立產生一筆全新的面談紀錄。';
+                btnNew.classList.add('hidden');
+            } else if (mode === 'editing_old') {
+                banner.classList.add('bg-amber-50', 'border-amber-300');
+                icon.innerHTML = '<i class="fa-solid fa-file-pen text-amber-500"></i>';
+                title.className = 'font-bold text-amber-800 text-lg mb-0.5'; desc.className = 'text-sm text-amber-700 font-medium';
+                title.innerText = `✏️ 正在修改 [${safeName}] 的歷史紀錄`;
+                desc.innerText = `注意：您正在覆寫 ${dateStr} 的歷史面談。若這次是新一次的訪談，請點擊右方按鈕。`;
+                btnNew.classList.remove('hidden');
+            }
+        }
+
+        function val(id) { return document.getElementById(id).value.trim(); }
+        function setVal(id, v) { document.getElementById(id).value = v || ''; }
+        function getRadioVal(name) { const el = document.querySelector(`input[name="${name}"]:checked`); return el ? el.value : ''; }
+        function setRadioVal(name, v) { 
+            document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.checked = false);
+            if(v) { const target = document.querySelector(`input[name="${name}"][value="${v}"]`); if(target) target.checked = true; }
+        }
+
+        // ==========================================
+        // 模組 2：IndexedDB 引擎 (時間排序)
+        // ==========================================
+        class CRMDatabase {
+            constructor() { this.dbName = 'DreamBlueprintDB_V1'; this.db = null; }
+            async init() {
+                return new Promise((resolve, reject) => {
+                    const req = indexedDB.open(this.dbName, 1);
+                    req.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('clients')) { const cs = db.createObjectStore('clients', { keyPath: 'uuid' }); cs.createIndex('phone', 'phone', { unique: true }); }
+                        if (!db.objectStoreNames.contains('records')) { const rs = db.createObjectStore('records', { keyPath: 'record_id' }); rs.createIndex('client_uuid', 'client_uuid', { unique: false }); rs.createIndex('r_date', 'r_date', { unique: false }); }
+                    };
+                    req.onsuccess = (e) => { this.db = e.target.result; resolve(); };
+                    req.onerror = (e) => reject(e);
+                });
+            }
+            generateUUID() { return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2); }
+            async saveClient(c) { return new Promise((r) => { const tx = this.db.transaction('clients', 'readwrite'); tx.objectStore('clients').put(c); tx.oncomplete = () => r(c.uuid); }); }
+            async saveRecord(rec) { return new Promise((r) => { const tx = this.db.transaction('records', 'readwrite'); tx.objectStore('records').put(rec); tx.oncomplete = () => r(rec.record_id); }); }
+            async getClientByPhone(p) { return new Promise((r) => { const tx = this.db.transaction('clients', 'readonly'); const req = tx.objectStore('clients').index('phone').get(p); req.onsuccess = () => r(req.result); }); }
+            async getAllClients() { return new Promise((r) => { const tx = this.db.transaction('clients', 'readonly'); const req = tx.objectStore('clients').getAll(); req.onsuccess = () => r(req.result); }); }
+            async getRecordsByClient(id) {
+                return new Promise((r) => {
+                    const tx = this.db.transaction('records', 'readonly');
+                    const req = tx.objectStore('records').index('client_uuid').getAll(id);
+                    req.onsuccess = () => {
+                        let res = req.result || [];
+                        res.sort((a,b) => new Date(a.r_date) - new Date(b.r_date)); // 升冪 (舊->新)
+                        r(res);
+                    };
+                });
+            }
+        }
+        const DB = new CRMDatabase();
+        DB.init();
+
+        // ==========================================
+        // 模組 3：Mermaid 家族樹引擎
+        // ==========================================
+        mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'loose' });
+        let familyState = []; let memberCounter = 0;
+        function sanitizeMermaid(text) { return (text || '').replace(/[\[\]\(\)\{\}\"\'\;\|\\]/g, '_'); }
+        
+        function compileMermaidSyntax(clientName, clientGender, stateArray) {
+            let syntax = 'graph TD;\n';
+            syntax += `classDef maleStyle fill:#dbeafe,stroke:#3b82f6,stroke-width:2px,color:#1e40af;\nclassDef femaleStyle fill:#fce7f3,stroke:#ec4899,stroke-width:2px,color:#be185d;\nclassDef defaultStyle fill:#f3f4f6,stroke:#9ca3af,stroke-width:2px,color:#374151;\nclassDef unionStyle fill:#ffefff,stroke:#ffb3d9,stroke-width:2px,color:#be185d;\nclassDef dotStyle fill:#9ca3af,stroke:#4b5563,stroke-width:1px,color:transparent;\n`;
+
+            const cName = sanitizeMermaid(clientName) || '客戶本人';
+            const cLabel = `${cName}<br><b>(本人)</b>`;
+            if (clientGender === 'M') syntax += `Node_0["${cLabel}"]:::maleStyle\n`; else if (clientGender === 'F') syntax += `Node_0(("${cLabel}")):::femaleStyle\n`; else syntax += `Node_0(["${cLabel}"]):::defaultStyle\n`;
+
+            stateArray.forEach(m => {
+                const sName = sanitizeMermaid(m.name); const dLabel = m.age ? `${sName}<br>${m.age}歲` : sName;
+                if (m.gender === 'M') syntax += `Node_${m.id}["${dLabel}"]:::maleStyle\n`; else if (m.gender === 'F') syntax += `Node_${m.id}(("${dLabel}")):::femaleStyle\n`; else syntax += `Node_${m.id}(["${dLabel}"]):::defaultStyle\n`;
+            });
+
+            let maritalUnions = {}, parentUnions = {};
+            stateArray.forEach(m => { if (m.role === '配偶') { let uId = `U_M_${m.targetId}_${m.id}`; maritalUnions[m.targetId] = uId; maritalUnions[m.id] = uId; syntax += `${uId}(("❤")):::unionStyle\nNode_${m.targetId} --- ${uId}\nNode_${m.id} ---|配偶| ${uId}\n`; } });
+            stateArray.forEach(m => { if (m.role === '父親' || m.role === '母親') { let uId = parentUnions[m.targetId]; if (!uId) { uId = `U_P_${m.targetId}`; parentUnions[m.targetId] = uId; syntax += `${uId}((" ")):::dotStyle\n${uId} --> Node_${m.targetId}\n`; } syntax += `Node_${m.id} ---|${m.role}| ${uId}\n`; } });
+            stateArray.forEach(m => { if (m.role === '兄弟姊妹') { let uId = parentUnions[m.targetId]; if (!uId) { uId = `U_P_${m.targetId}`; parentUnions[m.targetId] = uId; syntax += `${uId}((" ")):::dotStyle\n${uId} --> Node_${m.targetId}\n`; } syntax += `${uId} -->|兄弟姊妹| Node_${m.id}\n`; } });
+            stateArray.forEach(m => { if (m.role === '子女') { let uId = maritalUnions[m.targetId]; if (!uId) { uId = `U_M_Solo_${m.targetId}`; maritalUnions[m.targetId] = uId; syntax += `${uId}((" ")):::dotStyle\nNode_${m.targetId} --- ${uId}\n`; } syntax += `${uId} -->|子女| Node_${m.id}\n`; } });
+            return syntax;
+        }
+
+        async function updateFormMermaidGraph() {
+            const graphDiv = document.getElementById('familyGraph');
+            const cName = val('c_name'); const cGen = val('c_gender');
+            
+            const select = document.getElementById('ft_target'); const currentVal = select.value;
+            let html = `<option value="0">${cName||'客戶本人'} (本人)</option>`;
+            familyState.forEach(m => { html += `<option value="${m.id}">${m.name} (${m.role})</option>`; });
+            select.innerHTML = html; select.value = Array.from(select.options).some(o => o.value === currentVal) ? currentVal : "0";
+
+            if (familyState.length === 0 && !cName) { graphDiv.innerHTML = '請先輸入客戶姓名。'; return; }
+            graphDiv.innerHTML = '<div class="skeleton-pulse text-indigo-500">繪製中...</div>';
+            try { const { svg } = await mermaid.render(`mer_${Date.now()}`, compileMermaidSyntax(cName, cGen, familyState)); graphDiv.innerHTML = svg; } catch(e) { graphDiv.innerHTML = '<div class="text-red-500">繪製失敗</div>'; }
+        }
+
+        document.getElementById('ft_add_btn').addEventListener('click', () => {
+            const targetId = val('ft_target'); const role = val('ft_role'); const name = val('ft_name'); const gender = val('ft_gender'); const age = val('ft_age');
+            if(!name) return showToast('請輸入姓名', 'error');
+            familyState.push({ id: ++memberCounter, targetId, role, name, gender, age });
+            setVal('ft_name',''); setVal('ft_age','');
+            updateFormMermaidGraph(); triggerAutoSave();
+        });
+        document.getElementById('ft_clear_btn').addEventListener('click', () => { if(confirm('清空家族圖？')) { familyState = []; memberCounter=0; updateFormMermaidGraph(); triggerAutoSave(); } });
+        document.getElementById('ft_role').addEventListener('change', (e) => { const r = e.target.value; const gs = document.getElementById('ft_gender'); if(['父親','兄弟姊妹'].includes(r)) gs.value='M'; else if(['母親'].includes(r)) gs.value='F'; });
+
+        // ==========================================
+        // 模組 4：表單防抖與資料搜集
+        // ==========================================
+        const syncBadge = document.getElementById('sync-badge');
+        let saveTimeout;
+
+        function clearRecordFields() {
+            const fields = ['s_work', 's_family', 's_life', 'f_income', 'f_asset', 'f_risk', 
+                            'limra_1', 'limra_2', 'limra_3', 'limra_4', 'limra_5', 
+                            'm_1_1', 'm_1_2', 'm_1_3', 'm_1_4', 'm_2_1', 'm_2_2', 'm_2_3', 'm_2_4', 
+                            'm_3_1', 'm_3_2', 'm_3_3', 'm_3_4', 'm_4_1', 'm_4_2', 'm_4_3', 'm_4_4',
+                            't_now', 't_mid', 't_long', 'st_issue', 'st_mean', 'st_obj', 'fb_client', 'fb_self'];
+            fields.forEach(f => setVal(f, ''));
+            setRadioVal('prob', '');
+            setVal('r_stage_pre', 'C1'); setVal('r_stage_post', 'C1');
+            setVal('r_date', new Date().toISOString().split('T')[0]);
+            setVal('current_record_id', '');
+            updateFormBanner('new', val('c_name'));
+        }
+
+        document.getElementById('btn_force_new').addEventListener('click', () => { clearRecordFields(); showToast('已清空面談欄位，將為您建立全新紀錄！'); });
+
+        async function saveFormDataToDB() {
+            if (!val('c_phone')) return; 
+            syncBadge.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i>儲存中...';
+            syncBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 transition-colors';
+
+            let clientUuid = val('current_client_uuid');
+            if (!clientUuid) { const exist = await DB.getClientByPhone(val('c_phone')); clientUuid = exist ? exist.uuid : DB.generateUUID(); setVal('current_client_uuid', clientUuid); }
+
+            let recordId = val('current_record_id'); const today = val('r_date') || new Date().toISOString().split('T')[0];
+            if (!recordId) { recordId = `REC_${clientUuid}_${Date.now()}`; setVal('current_record_id', recordId); updateFormBanner('new', val('c_name')); }
+
+            const clientObj = { uuid: clientUuid, phone: val('c_phone'), name: val('c_name'), gender: val('c_gender'), marital: val('c_marital'), dob: val('c_dob'), job: val('c_job'), last_update: new Date().toISOString() };
+            const recordObj = {
+                record_id: recordId, client_uuid: clientUuid, r_date: today, stage_pre: val('r_stage_pre'), stage_post: val('r_stage_post'),
+                s_work: val('s_work'), s_family: val('s_family'), s_life: val('s_life'), f_income: val('f_income'), f_asset: val('f_asset'), f_risk: val('f_risk'),
+                limra_1: val('limra_1'), limra_2: val('limra_2'), limra_3: val('limra_3'), limra_4: val('limra_4'), limra_5: val('limra_5'),
+                m_1_1: val('m_1_1'), m_1_2: val('m_1_2'), m_1_3: val('m_1_3'), m_1_4: val('m_1_4'),
+                m_2_1: val('m_2_1'), m_2_2: val('m_2_2'), m_2_3: val('m_2_3'), m_2_4: val('m_2_4'),
+                m_3_1: val('m_3_1'), m_3_2: val('m_3_2'), m_3_3: val('m_3_3'), m_3_4: val('m_3_4'),
+                m_4_1: val('m_4_1'), m_4_2: val('m_4_2'), m_4_3: val('m_4_3'), m_4_4: val('m_4_4'),
+                t_now: val('t_now'), t_mid: val('t_mid'), t_long: val('t_long'), 
+                st_issue: val('st_issue'), st_mean: val('st_mean'), st_obj: val('st_obj'),
+                prob: getRadioVal('prob'), fb_client: val('fb_client'), fb_self: val('fb_self'),
+                family_state: JSON.stringify(familyState)
+            };
+
+            await DB.saveClient(clientObj); await DB.saveRecord(recordObj);
+            syncBadge.innerHTML = '<i class="fa-solid fa-check-double mr-1.5"></i>已儲存';
+            syncBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 transition-colors';
+        }
+
+        function triggerAutoSave() { clearTimeout(saveTimeout); saveTimeout = setTimeout(saveFormDataToDB, 1500); }
+        document.querySelectorAll('.auto-save-trigger').forEach(el => { el.addEventListener('input', triggerAutoSave); el.addEventListener('change', triggerAutoSave); });
+
+        document.getElementById('searchClient').addEventListener('keypress', async (e) => {
+            if (e.key === 'Enter') {
+                const c = await DB.getClientByPhone(e.target.value.trim());
+                if (c) {
+                    setVal('c_name', c.name); setVal('c_phone', c.phone); setVal('c_gender', c.gender); setVal('c_marital', c.marital); setVal('c_dob', c.dob); setVal('c_job', c.job); setVal('current_client_uuid', c.uuid); 
+                    clearRecordFields();
+                    const pastRecords = await DB.getRecordsByClient(c.uuid);
+                    if(pastRecords.length > 0) { try { familyState = JSON.parse(pastRecords[pastRecords.length-1].family_state || "[]"); memberCounter = familyState.reduce((max, m) => Math.max(max, m.id), 0); } catch(err) {} } else { familyState = []; memberCounter = 0; }
+                    updateFormMermaidGraph(); showToast(`已載入 [${c.name}] 資料，準備建立全新面談！`);
+                } else showToast('找不到客戶', 'error');
+            }
+        });
+
+        document.getElementById('btn_new_client').addEventListener('click', () => {
+            document.querySelectorAll('#form input[type="text"], #form input[type="tel"], #form input[type="date"], #form textarea').forEach(el => el.value = '');
+            setRadioVal('prob', ''); familyState = []; memberCounter = 0; setVal('current_client_uuid', ''); setVal('current_record_id', '');
+            document.getElementById('form_mode_banner').classList.add('hidden'); updateFormMermaidGraph(); showToast('已清空表單');
+        });
+
+        // ==========================================
+        // 模組 5：個案儀表板 (讀取模式)
+        // ==========================================
+        const selClient = document.getElementById('db_client_select'); const selRecord = document.getElementById('db_record_select'); const btnExport = document.getElementById('btn_export');
+        let dashboardCurrentClient = null; let dashboardCurrentRecords = [];
+
+        async function loadDashboardClients() {
+            const clients = await DB.getAllClients(); selClient.innerHTML = '<option value="">-- 選擇客戶 --</option>';
+            clients.forEach(c => { selClient.innerHTML += `<option value="${c.uuid}">${c.name} (${c.phone})</option>`; });
+        }
+
+        function dText(str) { return str ? str : '-'; } // helper for empty strings
+
+        selClient.addEventListener('change', async (e) => {
+            const uuid = e.target.value; if (!uuid) { resetDashboard(); return; }
+            dashboardCurrentClient = (await DB.getAllClients()).find(c => c.uuid === uuid);
+            dashboardCurrentRecords = await DB.getRecordsByClient(uuid);
+
+            selRecord.disabled = false; btnExport.disabled = false; selRecord.innerHTML = '<option value="">-- 選擇歷史紀錄 --</option>';
+            const tlContainer = document.getElementById('db_timeline_container'); tlContainer.innerHTML = '';
+
+            if (dashboardCurrentRecords.length === 0) tlContainer.innerHTML = '<div class="text-sm text-gray-400 ml-4">尚無紀錄</div>';
+            else {
+                dashboardCurrentRecords.forEach(r => {
+                    selRecord.innerHTML += `<option value="${r.record_id}">${r.r_date} (階段: ${r.stage_post})</option>`;
+                    tlContainer.innerHTML += `<div class="relative pl-6 pb-4 cursor-pointer hover:bg-gray-50 rounded" onclick="document.getElementById('db_record_select').value='${r.record_id}'; document.getElementById('db_record_select').dispatchEvent(new Event('change'));"><div class="absolute left-[-5px] top-1 w-3 h-3 rounded-full bg-blue-500 border-2 border-white shadow"></div><div class="text-xs font-bold text-gray-500">${r.r_date}</div><div class="text-sm text-blue-700 font-medium mt-1">推進至 ${r.stage_post}</div></div>`;
+                });
+                selRecord.value = dashboardCurrentRecords[dashboardCurrentRecords.length - 1].record_id; selRecord.dispatchEvent(new Event('change'));
+            }
+        });
+
+        selRecord.addEventListener('change', async (e) => {
+            const recId = e.target.value; if(!recId) return;
+            const rec = dashboardCurrentRecords.find(r => r.record_id === recId); const cli = dashboardCurrentClient;
+
+            document.getElementById('db_empty_state').classList.add('hidden'); document.getElementById('db_data_view').classList.remove('hidden');
+
+            document.getElementById('view_name').innerText = dText(cli.name); document.getElementById('view_phone').innerText = dText(cli.phone); document.getElementById('view_job').innerText = dText(cli.job);
+            document.getElementById('view_marital').innerText = cli.marital === 'M' ? '已婚' : '未婚';
+            document.getElementById('view_date').innerText = dText(rec.r_date); document.getElementById('view_stage').innerText = `${rec.stage_pre} ➡️ ${rec.stage_post}`;
+            
+            // 機率 Badge
+            const badge = document.getElementById('view_prob_badge');
+            if(rec.prob === '100') { badge.className = 'px-2 py-1 rounded text-xs font-bold text-white bg-green-500'; badge.innerText = '100% (極高)'; }
+            else if(rec.prob === '70') { badge.className = 'px-2 py-1 rounded text-xs font-bold text-white bg-blue-500'; badge.innerText = '70% (有機會)'; }
+            else if(rec.prob === '30') { badge.className = 'px-2 py-1 rounded text-xs font-bold text-white bg-orange-500'; badge.innerText = '30% (觀望中)'; }
+            else { badge.className = 'px-2 py-1 rounded text-xs font-bold text-white bg-gray-400'; badge.innerText = '機率未評估'; }
+
+            // LIMRA
+            for(let i=1; i<=5; i++) document.getElementById(`view_limra_${i}`).innerText = dText(rec[`limra_${i}`]);
+            
+            // 4x4 Matrix
+            for(let y=1; y<=4; y++) for(let x=1; x<=4; x++) { document.getElementById(`v_m_${y}_${x}`).innerText = dText(rec[`m_${y}_${x}`]); }
+
+            // Other blocks
+            document.getElementById('view_status').innerText = `工作: ${dText(rec.s_work)}\n家庭: ${dText(rec.s_family)}\n生活: ${dText(rec.s_life)}`;
+            document.getElementById('view_finance').innerText = `收支: ${dText(rec.f_income)}\n資產: ${dText(rec.f_asset)}\n風險: ${dText(rec.f_risk)}`;
+            
+            document.getElementById('view_t_now').innerText = dText(rec.t_now); document.getElementById('view_t_mid').innerText = dText(rec.t_mid); document.getElementById('view_t_long').innerText = dText(rec.t_long);
+            document.getElementById('view_st_issue').innerText = `${dText(rec.st_issue)}\n[意義] ${dText(rec.st_mean)}`;
+            document.getElementById('view_st_obj').innerText = dText(rec.st_obj);
+            document.getElementById('view_fb_client').innerText = dText(rec.fb_client); document.getElementById('view_fb_self').innerText = dText(rec.fb_self);
+
+            const gDiv = document.getElementById('view_family_graph');
+            try {
+                let snapState = JSON.parse(rec.family_state || "[]");
+                if (snapState.length > 0 || cli.name) { const { svg } = await mermaid.render(`view_mer_${Date.now()}`, compileMermaidSyntax(cli.name, cli.gender, snapState)); gDiv.innerHTML = svg; } 
+                else gDiv.innerHTML = '<span class="text-gray-400">當次未紀錄家族圖</span>';
+            } catch(err) { gDiv.innerHTML = '<span class="text-red-400">家族圖解析錯誤</span>'; }
+        });
+
+        document.getElementById('btn_edit_record').addEventListener('click', () => {
+            const recId = selRecord.value; const rec = dashboardCurrentRecords.find(r => r.record_id === recId); const cli = dashboardCurrentClient;
+            if(!rec || !cli) return;
+            
+            setVal('c_name', cli.name); setVal('c_phone', cli.phone); setVal('c_gender', cli.gender); setVal('c_marital', cli.marital); setVal('c_dob', cli.dob); setVal('c_job', cli.job); setVal('current_client_uuid', cli.uuid);
+            setVal('current_record_id', rec.record_id); setVal('r_date', rec.r_date); setVal('r_stage_pre', rec.stage_pre); setVal('r_stage_post', rec.stage_post);
+            
+            setVal('s_work', rec.s_work); setVal('s_family', rec.s_family); setVal('s_life', rec.s_life);
+            setVal('f_income', rec.f_income); setVal('f_asset', rec.f_asset); setVal('f_risk', rec.f_risk);
+            for(let i=1; i<=5; i++) setVal(`limra_${i}`, rec[`limra_${i}`]);
+            for(let y=1; y<=4; y++) for(let x=1; x<=4; x++) setVal(`m_${y}_${x}`, rec[`m_${y}_${x}`]);
+            
+            setVal('t_now', rec.t_now); setVal('t_mid', rec.t_mid); setVal('t_long', rec.t_long);
+            setVal('st_issue', rec.st_issue); setVal('st_mean', rec.st_mean); setVal('st_obj', rec.st_obj);
+            setRadioVal('prob', rec.prob); setVal('fb_client', rec.fb_client); setVal('fb_self', rec.fb_self);
+            
+            try { familyState = JSON.parse(rec.family_state || "[]"); memberCounter = familyState.reduce((max, m) => Math.max(max, m.id), 0); } catch(e) { familyState = []; memberCounter = 0; }
+            updateFormMermaidGraph(); updateFormBanner('editing_old', cli.name, rec.r_date);
+            navigateTo('form'); window.scrollTo(0, 0); showToast(`載入 ${rec.r_date} 紀錄編輯`);
+        });
+
+        function resetDashboard() {
+            selRecord.innerHTML = '<option value="">-- 選擇歷史紀錄 --</option>'; selRecord.disabled = true; btnExport.disabled = true;
+            document.getElementById('db_timeline_container').innerHTML = '<div class="text-gray-400 text-sm ml-4">請先選擇客戶</div>';
+            document.getElementById('db_empty_state').classList.remove('hidden'); document.getElementById('db_data_view').classList.add('hidden');
+        }
+
+        btnExport.addEventListener('click', async () => {
+            if(!dashboardCurrentClient) return; const zip = new JSZip(); const cName = dashboardCurrentClient.name || "客戶"; const folder = zip.folder(`${cName}_分析包`);
+            folder.file("01_基本資料.json", JSON.stringify(dashboardCurrentClient, null, 2));
+            dashboardCurrentRecords.forEach((r, idx) => { const seq = String(idx + 1).padStart(2, '0'); folder.file(`02_歷史面談_${seq}_${r.r_date}.json`, JSON.stringify(r, null, 2)); });
+            const content = await zip.generateAsync({ type: "blob" }); const a = document.createElement("a"); a.href = URL.createObjectURL(content); a.download = `${cName}_CRM_Backup.zip`; a.click(); showToast(`打包 ${cName} 檔案成功！`);
+        });
+
+        document.getElementById('c_name').addEventListener('input', updateFormMermaidGraph); document.getElementById('c_gender').addEventListener('change', updateFormMermaidGraph);
+        document.getElementById('form_mode_banner').classList.add('hidden');
+
+    </script>
+</body>
+</html>
