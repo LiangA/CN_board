@@ -53,7 +53,6 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
-                    <!-- 去敏模式切換按鈕 -->
                     <button id="btn_mask_toggle" class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors shadow-inner cursor-pointer">
                         <i class="fa-solid fa-eye mr-1.5"></i>去敏: 關閉
                     </button>
@@ -67,9 +66,6 @@
 
     <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
         
-        <!-- ========================================== -->
-        <!-- View 1: 新增與編輯面談表單 (輸入模式) -->
-        <!-- ========================================== -->
         <section id="form" class="view-section view-active space-y-6">
             
             <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 sticky top-20 z-40">
@@ -85,7 +81,6 @@
                 </button>
             </div>
 
-            <!-- 面談模式狀態提示列 -->
             <div id="form_mode_banner" class="hidden border rounded-xl p-4 mb-6 flex justify-between items-center shadow-sm transition-colors">
                 <div class="flex items-center gap-4">
                     <div id="form_mode_icon" class="text-3xl"></div>
@@ -102,17 +97,24 @@
             <input type="hidden" id="current_client_uuid" value="">
             <input type="hidden" id="current_record_id" value="">
 
-            <!-- 區塊一：基本資料與狀態 -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                 <h3 class="text-lg font-bold text-gray-800 border-l-4 border-blue-500 pl-3 mb-5">區塊一：基本資料與狀態</h3>
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <div><label class="form-label text-blue-700 font-bold">客戶姓名</label><input type="text" class="form-input bg-blue-50 auto-save-trigger" id="c_name" placeholder="王大明"></div>
                     <div><label class="form-label text-blue-700 font-bold">性別</label><select class="form-input bg-blue-50 auto-save-trigger" id="c_gender"><option value="M">男</option><option value="F">女</option></select></div>
-                    <div><label class="form-label text-blue-700 font-bold">手機號碼 (主鍵)</label><input type="tel" class="form-input bg-blue-50 auto-save-trigger" id="c_phone" placeholder="0912345678"></div>
+                    
+                    <!-- 修改：加入產生暫時代碼的按鈕 -->
+                    <div>
+                        <label class="form-label text-blue-700 font-bold flex justify-between items-center">
+                            <span>手機號碼 (主鍵)</span>
+                            <button type="button" id="btn_temp_phone" class="text-xs text-blue-600 hover:text-blue-800 bg-blue-100 hover:bg-blue-200 px-2 py-0.5 rounded transition-colors shadow-sm cursor-pointer"><i class="fa-solid fa-bolt"></i> 暫時代碼</button>
+                        </label>
+                        <input type="tel" class="form-input bg-blue-50 auto-save-trigger" id="c_phone" placeholder="0912345678">
+                    </div>
+                    
                     <div><label class="form-label">婚姻狀態</label><select class="form-input auto-save-trigger" id="c_marital"><option value="S">未婚</option><option value="M">已婚</option></select></div>
                     <div><label class="form-label">職業 / 收入</label><input type="text" class="form-input auto-save-trigger" id="c_job"></div>
 
-                    <!-- 智慧年齡計算區 -->
                     <div><label class="form-label">出生年月日</label><input type="date" class="form-input auto-save-trigger" id="c_dob"></div>
                     <div><label class="form-label text-gray-700 font-bold">實際年齡</label><input type="number" class="form-input auto-save-trigger" id="c_age" placeholder="歲"></div>
                     <div><label class="form-label text-indigo-700 font-bold">保險年齡</label><input type="number" class="form-input bg-indigo-50 border-indigo-200 auto-save-trigger" id="c_ins_age" placeholder="歲"></div>
@@ -128,7 +130,6 @@
                 </div>
             </div>
 
-            <!-- 區塊二：互動式家族關係圖 -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 relative overflow-hidden">
                 <h3 class="text-lg font-bold text-gray-800 border-l-4 border-blue-500 pl-3 mb-5">區塊二：互動式家族關係圖</h3>
                 <div class="flex flex-wrap items-end gap-3 mb-5 bg-indigo-50/50 p-4 rounded-lg border border-indigo-100">
@@ -160,7 +161,6 @@
                 </div>
             </div>
 
-            <!-- 區塊三 -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                 <h3 class="text-lg font-bold text-gray-800 border-l-4 border-blue-500 pl-3 mb-5">區塊三：現況釐清 & 財務觀念</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -177,7 +177,6 @@
                 </div>
             </div>
 
-            <!-- 區塊四 -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                 <h3 class="text-lg font-bold text-gray-800 border-l-4 border-blue-500 pl-3 mb-5">區塊四：LIMRA 五大核心目標框架</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-5 gap-3 bg-gray-50 p-4 rounded-lg border border-gray-100">
@@ -189,7 +188,6 @@
                 </div>
             </div>
 
-            <!-- 區塊五：4x4 夢想矩陣 -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <h3 class="text-lg font-bold text-gray-800 border-l-4 border-blue-500 pl-3 mb-5">區塊五：夢想藍圖深掘矩陣 (4x4 Matrix)</h3>
                 <div class="overflow-x-auto pb-2">
@@ -251,9 +249,6 @@
             <div class="text-center pt-2 text-sm text-gray-400 font-medium">系統已開啟 1.5 秒自動防抖存檔功能</div>
         </section>
 
-        <!-- ========================================== -->
-        <!-- View 2: 個案儀表板 (討論模式：卡片與表格化) -->
-        <!-- ========================================== -->
         <section id="dashboard" class="view-section view-hidden">
             
             <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6 flex flex-wrap items-center gap-4 sticky top-20 z-30">
@@ -271,7 +266,6 @@
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <!-- 左側：時間軸 -->
                 <div class="col-span-1 lg:col-span-3">
                     <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 h-full max-h-[800px] overflow-y-auto">
                         <h4 class="font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-solid fa-timeline mr-2 text-indigo-500"></i>面談軌跡</h4>
@@ -281,7 +275,6 @@
                     </div>
                 </div>
 
-                <!-- 右側：資料檢視區 -->
                 <div class="col-span-1 lg:col-span-9 space-y-6">
                     <div id="db_content_area" class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 min-h-[500px]">
                         
@@ -291,7 +284,6 @@
                         </div>
 
                         <div id="db_data_view" class="hidden space-y-8">
-                            <!-- 1. Header -->
                             <div class="flex justify-between items-end border-b pb-4">
                                 <div>
                                     <div class="flex items-center gap-3 mb-1">
@@ -318,7 +310,6 @@
                                 </div>
                             </div>
 
-                            <!-- 2. LIMRA 卡片 -->
                             <div>
                                 <h4 class="font-bold text-gray-800 mb-3"><i class="fa-solid fa-layer-group mr-2 text-indigo-500"></i>LIMRA 核心目標狀態</h4>
                                 <div class="grid grid-cols-5 gap-3">
@@ -330,7 +321,6 @@
                                 </div>
                             </div>
 
-                            <!-- 3. 4x4 矩陣 -->
                             <div>
                                 <h4 class="font-bold text-gray-800 mb-3"><i class="fa-solid fa-table-cells mr-2 text-blue-500"></i>夢想藍圖深掘矩陣 (4x4)</h4>
                                 <div class="overflow-x-auto rounded-lg border border-gray-200">
@@ -351,7 +341,6 @@
                                 </div>
                             </div>
 
-                            <!-- 4. 財務現狀 & 時間軸 -->
                             <div class="grid grid-cols-2 gap-6">
                                 <div class="space-y-4">
                                     <h4 class="font-bold text-gray-800 border-b pb-2"><i class="fa-solid fa-clipboard-list mr-2 text-emerald-500"></i>現狀與財務</h4>
@@ -368,7 +357,6 @@
                                 </div>
                             </div>
 
-                            <!-- 5. 策略與反饋 -->
                             <div class="grid grid-cols-2 gap-6">
                                 <div class="space-y-4">
                                     <h4 class="font-bold text-gray-800 border-b pb-2"><i class="fa-solid fa-chess-knight mr-2 text-orange-500"></i>面談策略</h4>
@@ -382,7 +370,6 @@
                                 </div>
                             </div>
 
-                            <!-- 6. 家族圖 -->
                             <div>
                                 <h4 class="font-bold text-gray-800 mb-3"><i class="fa-solid fa-diagram-project mr-2 text-blue-500"></i>家族結構圖 (當次快照)</h4>
                                 <div id="view_family_graph" class="bg-white border-2 border-dashed border-gray-200 rounded-lg p-4 flex justify-center overflow-x-auto min-h-[250px]"></div>
@@ -399,9 +386,6 @@
     <div id="toast-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-2 pointer-events-none"></div>
 
     <script>
-        // ==========================================
-        // 全域去敏設定 (De-identification) 與 工具
-        // ==========================================
         let isMasked = false;
 
         function maskName(name) {
@@ -410,17 +394,20 @@
             if (name.length === 2) return name.charAt(0) + 'O';
             return name.charAt(0) + 'O'.repeat(name.length - 1);
         }
-        function maskPhone(phone) { return phone ? phone.replace(/./g, '*') : ''; }
+        
+        function maskPhone(phone) { 
+            if (!phone) return '';
+            return phone.length > 3 ? '*'.repeat(phone.length - 3) + phone.slice(-3) : '*'.repeat(phone.length);
+        }
+        
         function maskDOB(dob) { return dob ? '****-**-**' : ''; }
         
-        // 嚴格解讀 Falsy 數值 (解決年齡為 0 時被判定為空值的 Bug)
         function dText(val) {
             if (val === 0 || val === '0') return '0';
             if (val === undefined || val === null || val === '') return '-';
             return String(val);
         }
 
-        // 清除會讓 Mermaid 渲染崩潰的特殊字元
         function sanitizeMermaid(str) {
             if (!str) return '';
             return String(str).replace(/["\[\]\(\)\{\}\;\<\>\|\\]/g, ' ').trim();
@@ -432,20 +419,27 @@
                 this.innerHTML = '<i class="fa-solid fa-eye-slash mr-1.5"></i>去敏: 開啟';
                 this.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
                 this.classList.add('bg-red-500', 'text-white', 'hover:bg-red-600');
-                showToast('已開啟安全去敏模式，敏感資訊將被遮蔽。', 'success');
+                showToast('已開啟安全去敏模式，僅顯示末三碼供辨識。', 'success');
             } else {
                 this.innerHTML = '<i class="fa-solid fa-eye mr-1.5"></i>去敏: 關閉';
                 this.classList.remove('bg-red-500', 'text-white', 'hover:bg-red-600');
                 this.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
             }
             updateFormMermaidGraph();
+            loadDashboardClients(); 
+            
             const recordSelect = document.getElementById('db_record_select');
             if (recordSelect && recordSelect.value) recordSelect.dispatchEvent(new Event('change'));
         });
 
-        // ==========================================
-        // 模組 1：UI 與表單工具
-        // ==========================================
+        // 產生暫時代碼的功能邏輯
+        document.getElementById('btn_temp_phone').addEventListener('click', () => {
+            const tempPhone = '000' + Math.floor(Math.random() * 10000000).toString().padStart(7, '0');
+            setVal('c_phone', tempPhone);
+            triggerAutoSave();
+            showToast('已產生暫時識別碼：' + tempPhone);
+        });
+
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -512,9 +506,6 @@
             if(v) { const target = document.querySelector(`input[name="${name}"][value="${v}"]`); if(target) target.checked = true; }
         }
 
-        // ==========================================
-        // 智慧年齡計算邏輯
-        // ==========================================
         function calculateAges(dobStr) {
             if(!dobStr) return { age: '', insAge: '' };
             const dob = new Date(dobStr);
@@ -546,9 +537,6 @@
             triggerAutoSave();
         });
 
-        // ==========================================
-        // 模組 2：IndexedDB 引擎
-        // ==========================================
         class CRMDatabase {
             constructor() { this.dbName = 'DreamBlueprintDB_V1'; this.db = null; }
             async init() {
@@ -583,9 +571,6 @@
         const DB = new CRMDatabase();
         DB.init();
 
-        // ==========================================
-        // 模組 3：Mermaid 家族樹引擎 (改用嚴格鎖與非同步容器替換修正 Crash)
-        // ==========================================
         mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'loose' });
         let familyState = []; let memberCounter = 0;
         
@@ -613,7 +598,6 @@
             return syntax;
         }
 
-        // 使用渲染版本鎖，確保快速輸入時不發生 Race Condition
         let formMermaidTimer = null;
         let formRenderVersion = 0;
         
@@ -637,10 +621,9 @@
                     const syntax = compileMermaidSyntax(cName, cGen, familyState, isMasked);
                     const { svg } = await mermaid.render(uniqueId, syntax); 
                     
-                    // 確保只渲染最新版本，避免互相覆蓋
                     if (currentVersion === formRenderVersion) {
                         requestAnimationFrame(() => {
-                            graphDiv.innerHTML = ''; // 徹底清空，防止舊節點殘留
+                            graphDiv.innerHTML = ''; 
                             graphDiv.innerHTML = svg;
                         });
                     }
@@ -650,7 +633,7 @@
                         graphDiv.innerHTML = '<div class="text-red-500 font-bold">繪製失敗，請檢查輸入內容是否含有特殊符號</div>'; 
                     }
                 }
-            }, 400); // 延遲，避開連續打字造成的並發崩潰
+            }, 400); 
         }
 
         document.getElementById('ft_add_btn').addEventListener('click', () => {
@@ -663,9 +646,6 @@
         document.getElementById('ft_clear_btn').addEventListener('click', () => { if(confirm('清空家族圖？')) { familyState = []; memberCounter=0; updateFormMermaidGraph(); triggerAutoSave(); } });
         document.getElementById('ft_role').addEventListener('change', (e) => { const r = e.target.value; const gs = document.getElementById('ft_gender'); if(['父親','兄弟姊妹'].includes(r)) gs.value='M'; else if(['母親'].includes(r)) gs.value='F'; });
 
-        // ==========================================
-        // 模組 4：表單防抖與資料搜集
-        // ==========================================
         const syncBadge = document.getElementById('sync-badge');
         let saveTimeout;
 
@@ -760,16 +740,20 @@
             document.getElementById('form_mode_banner').classList.add('hidden'); updateFormMermaidGraph(); showToast('已清空表單');
         });
 
-        // ==========================================
-        // 模組 5：個案儀表板 (讀取模式 / 支援去敏)
-        // ==========================================
         const selClient = document.getElementById('db_client_select'); const selRecord = document.getElementById('db_record_select'); const btnExport = document.getElementById('btn_export');
         let dashboardCurrentClient = null; let dashboardCurrentRecords = [];
         let dashboardRenderVersion = 0;
 
         async function loadDashboardClients() {
-            const clients = await DB.getAllClients(); selClient.innerHTML = '<option value="">-- 選擇客戶 --</option>';
-            clients.forEach(c => { selClient.innerHTML += `<option value="${c.uuid}">${isMasked ? maskName(c.name) : c.name} (${isMasked ? maskPhone(c.phone) : c.phone})</option>`; });
+            const currentSelected = selClient.value;
+            const clients = await DB.getAllClients(); 
+            selClient.innerHTML = '<option value="">-- 選擇客戶 --</option>';
+            clients.forEach(c => { 
+                selClient.innerHTML += `<option value="${c.uuid}">${isMasked ? maskName(c.name) : c.name} (${isMasked ? maskPhone(c.phone) : c.phone})</option>`; 
+            });
+            if (currentSelected) {
+                selClient.value = currentSelected;
+            }
         }
 
         selClient.addEventListener('change', async (e) => {
