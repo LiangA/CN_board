@@ -29,7 +29,6 @@
         .skeleton-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
 
-        /* Dashboard 專用表格樣式 */
         .dashboard-table th { background-color: #eff6ff; color: #1e3a8a; font-weight: bold; padding: 0.75rem; border: 1px solid #bfdbfe; text-align: center; }
         .dashboard-table td { padding: 0.75rem; border: 1px solid #e5e7eb; vertical-align: top; white-space: pre-wrap; font-size: 0.875rem; color: #374151; }
         .dashboard-table .row-header { background-color: #f3f4f6; color: #4b5563; font-weight: bold; text-align: center; vertical-align: middle; }
@@ -53,7 +52,11 @@
                         </button>
                     </div>
                 </div>
-                <div class="flex items-center">
+                <div class="flex items-center gap-4">
+                    <!-- 去敏模式切換按鈕 -->
+                    <button id="btn_mask_toggle" class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors shadow-inner cursor-pointer">
+                        <i class="fa-solid fa-eye mr-1.5"></i>去敏: 關閉
+                    </button>
                     <span id="sync-badge" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 shadow-inner transition-colors duration-300">
                         <i class="fa-solid fa-cloud mr-1.5"></i>系統就緒
                     </span>
@@ -74,6 +77,9 @@
                     <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-gray-400"></i>
                     <input type="search" id="searchClient" placeholder="輸入手機號碼尋找舊客戶 (輸入後按下 Enter)，或直接填寫下方表單建立新客戶..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all">
                 </div>
+                <button id="btn_manual_save" class="bg-emerald-50 text-emerald-700 px-4 py-2 rounded-lg font-medium hover:bg-emerald-100 transition-colors border border-emerald-200 cursor-pointer shadow-sm">
+                    <i class="fa-solid fa-floppy-disk mr-2"></i>手動存檔
+                </button>
                 <button id="btn_new_client" class="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg font-medium hover:bg-blue-100 transition-colors border border-blue-200">
                     <i class="fa-solid fa-user-plus mr-2"></i>清空表單
                 </button>
@@ -96,16 +102,21 @@
             <input type="hidden" id="current_client_uuid" value="">
             <input type="hidden" id="current_record_id" value="">
 
-            <!-- 區塊一 -->
+            <!-- 區塊一：基本資料與狀態 -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                 <h3 class="text-lg font-bold text-gray-800 border-l-4 border-blue-500 pl-3 mb-5">區塊一：基本資料與狀態</h3>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <div><label class="form-label text-blue-700 font-bold">客戶姓名</label><input type="text" class="form-input bg-blue-50 auto-save-trigger" id="c_name" placeholder="王大明"></div>
                     <div><label class="form-label text-blue-700 font-bold">性別</label><select class="form-input bg-blue-50 auto-save-trigger" id="c_gender"><option value="M">男</option><option value="F">女</option></select></div>
                     <div><label class="form-label text-blue-700 font-bold">手機號碼 (主鍵)</label><input type="tel" class="form-input bg-blue-50 auto-save-trigger" id="c_phone" placeholder="0912345678"></div>
                     <div><label class="form-label">婚姻狀態</label><select class="form-input auto-save-trigger" id="c_marital"><option value="S">未婚</option><option value="M">已婚</option></select></div>
-                    <div><label class="form-label">出生年月日</label><input type="date" class="form-input auto-save-trigger" id="c_dob"></div>
                     <div><label class="form-label">職業 / 收入</label><input type="text" class="form-input auto-save-trigger" id="c_job"></div>
+
+                    <!-- 智慧年齡計算區 -->
+                    <div><label class="form-label">出生年月日</label><input type="date" class="form-input auto-save-trigger" id="c_dob"></div>
+                    <div><label class="form-label text-gray-700 font-bold">實際年齡</label><input type="number" class="form-input auto-save-trigger" id="c_age" placeholder="歲"></div>
+                    <div><label class="form-label text-indigo-700 font-bold">保險年齡</label><input type="number" class="form-input bg-indigo-50 border-indigo-200 auto-save-trigger" id="c_ins_age" placeholder="歲"></div>
+                    
                     <div><label class="form-label text-emerald-700 font-bold">本次訪談日期</label><input type="date" class="form-input bg-emerald-50 auto-save-trigger" id="r_date"></div>
                     <div><label class="form-label">階段推進</label>
                         <div class="flex items-center space-x-2">
@@ -117,7 +128,7 @@
                 </div>
             </div>
 
-            <!-- 區塊二 -->
+            <!-- 區塊二：互動式家族關係圖 -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 relative overflow-hidden">
                 <h3 class="text-lg font-bold text-gray-800 border-l-4 border-blue-500 pl-3 mb-5">區塊二：互動式家族關係圖</h3>
                 <div class="flex flex-wrap items-end gap-3 mb-5 bg-indigo-50/50 p-4 rounded-lg border border-indigo-100">
@@ -149,7 +160,7 @@
                 </div>
             </div>
 
-            <!-- 區塊三 (完整補齊 s_life, f_asset) -->
+            <!-- 區塊三 -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                 <h3 class="text-lg font-bold text-gray-800 border-l-4 border-blue-500 pl-3 mb-5">區塊三：現況釐清 & 財務觀念</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -178,54 +189,35 @@
                 </div>
             </div>
 
-            <!-- 區塊五：4x4 夢想矩陣 (完整補齊) -->
+            <!-- 區塊五：4x4 夢想矩陣 -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <h3 class="text-lg font-bold text-gray-800 border-l-4 border-blue-500 pl-3 mb-5">區塊五：夢想藍圖深掘矩陣 (4x4 Matrix)</h3>
                 <div class="overflow-x-auto pb-2">
                     <div class="min-w-[800px] grid grid-cols-5 gap-2 text-sm">
-                        <!-- Header -->
                         <div class="font-bold text-gray-400 flex items-end pb-2 justify-center border-b-2 border-gray-200">維度 \ 深掘</div>
                         <div class="font-bold text-center text-blue-800 bg-blue-50 py-2 rounded-t-md">結論想法 (揣摩)</div>
                         <div class="font-bold text-center text-blue-800 bg-blue-50 py-2 rounded-t-md">確認夢想 (心聲)</div>
                         <div class="font-bold text-center text-blue-800 bg-blue-50 py-2 rounded-t-md">轉折語</div>
                         <div class="font-bold text-center text-blue-800 bg-blue-50 py-2 rounded-t-md">擴大急迫性</div>
                         
-                        <!-- Row 1 -->
                         <div class="font-bold text-gray-700 bg-gray-100 flex items-center justify-center p-2 rounded-l-md text-center">在乎的人</div>
-                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_1_1"></textarea></div>
-                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_1_2"></textarea></div>
-                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_1_3"></textarea></div>
-                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_1_4"></textarea></div>
+                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_1_1"></textarea></div><div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_1_2"></textarea></div><div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_1_3"></textarea></div><div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_1_4"></textarea></div>
 
-                        <!-- Row 2 -->
                         <div class="font-bold text-gray-700 bg-gray-100 flex items-center justify-center p-2 rounded-l-md text-center">照顧好<br>自己</div>
-                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_2_1"></textarea></div>
-                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_2_2"></textarea></div>
-                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_2_3"></textarea></div>
-                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_2_4"></textarea></div>
+                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_2_1"></textarea></div><div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_2_2"></textarea></div><div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_2_3"></textarea></div><div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_2_4"></textarea></div>
 
-                        <!-- Row 3 -->
                         <div class="font-bold text-gray-700 bg-gray-100 flex items-center justify-center p-2 rounded-l-md text-center">渴望完成<br>的夢想</div>
-                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_3_1"></textarea></div>
-                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_3_2"></textarea></div>
-                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_3_3"></textarea></div>
-                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_3_4"></textarea></div>
+                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_3_1"></textarea></div><div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_3_2"></textarea></div><div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_3_3"></textarea></div><div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_3_4"></textarea></div>
 
-                        <!-- Row 4 -->
                         <div class="font-bold text-gray-700 bg-gray-100 flex items-center justify-center p-2 rounded-l-md text-center">擔心的事</div>
-                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_4_1"></textarea></div>
-                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_4_2"></textarea></div>
-                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_4_3"></textarea></div>
-                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_4_4"></textarea></div>
+                        <div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_4_1"></textarea></div><div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_4_2"></textarea></div><div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_4_3"></textarea></div><div><textarea class="form-input resize-none min-h-[60px] text-xs h-full auto-save-trigger" id="m_4_4"></textarea></div>
                     </div>
                 </div>
             </div>
 
-            <!-- 區塊六：策略規劃與反饋 (完整補齊) -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                 <h3 class="text-lg font-bold text-gray-800 border-l-4 border-blue-500 pl-3 mb-5">區塊六：策略規劃與檢討反饋</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <!-- 左半：時間軸與策略 -->
                     <div class="space-y-4">
                         <div class="bg-gray-50 p-4 rounded-lg border border-gray-100">
                             <label class="form-label text-indigo-700 font-bold mb-3"><i class="fa-solid fa-timeline mr-1"></i>規劃時間軸</label>
@@ -241,7 +233,6 @@
                             <div><label class="form-label text-blue-700 font-bold">預先處理反對問題</label><textarea class="form-input resize-none min-h-[60px] auto-save-trigger" id="st_obj" rows="1"></textarea></div>
                         </div>
                     </div>
-                    <!-- 右半：反饋與機率 -->
                     <div class="space-y-5">
                         <div class="bg-orange-50 p-4 rounded-lg border border-orange-100">
                             <label class="form-label text-orange-800 font-bold mb-3"><i class="fa-solid fa-percent mr-1"></i>簽約機率預估</label>
@@ -300,17 +291,18 @@
                         </div>
 
                         <div id="db_data_view" class="hidden space-y-8">
-                            <!-- 1. Header (包含機率徽章) -->
+                            <!-- 1. Header -->
                             <div class="flex justify-between items-end border-b pb-4">
                                 <div>
                                     <div class="flex items-center gap-3 mb-1">
                                         <h2 id="view_name" class="text-3xl font-bold text-gray-900">客戶姓名</h2>
                                         <span id="view_prob_badge" class="px-2 py-1 rounded text-xs font-bold text-white bg-gray-400">機率未評估</span>
                                     </div>
-                                    <p class="text-gray-500 font-medium text-sm">
+                                    <p class="text-gray-500 font-medium text-sm mt-2">
                                         <i class="fa-solid fa-phone mr-1"></i><span id="view_phone"></span> | 
                                         <i class="fa-solid fa-briefcase mr-1 ml-2"></i><span id="view_job"></span> | 
-                                        <i class="fa-solid fa-ring mr-1 ml-2"></i><span id="view_marital"></span>
+                                        <i class="fa-solid fa-ring mr-1 ml-2"></i><span id="view_marital"></span> |
+                                        <i class="fa-solid fa-cake-candles mr-1 ml-2"></i><span id="view_dob_age"></span>
                                     </p>
                                 </div>
                                 <div class="text-right flex flex-col items-end">
@@ -338,7 +330,7 @@
                                 </div>
                             </div>
 
-                            <!-- 3. 4x4 矩陣 (討論模式專用表格) -->
+                            <!-- 3. 4x4 矩陣 -->
                             <div>
                                 <h4 class="font-bold text-gray-800 mb-3"><i class="fa-solid fa-table-cells mr-2 text-blue-500"></i>夢想藍圖深掘矩陣 (4x4)</h4>
                                 <div class="overflow-x-auto rounded-lg border border-gray-200">
@@ -408,6 +400,50 @@
 
     <script>
         // ==========================================
+        // 全域去敏設定 (De-identification) 與 工具
+        // ==========================================
+        let isMasked = false;
+
+        function maskName(name) {
+            if (!name) return '';
+            if (name.length <= 1) return name;
+            if (name.length === 2) return name.charAt(0) + 'O';
+            return name.charAt(0) + 'O'.repeat(name.length - 1);
+        }
+        function maskPhone(phone) { return phone ? phone.replace(/./g, '*') : ''; }
+        function maskDOB(dob) { return dob ? '****-**-**' : ''; }
+        
+        // 嚴格解讀 Falsy 數值 (解決年齡為 0 時被判定為空值的 Bug)
+        function dText(val) {
+            if (val === 0 || val === '0') return '0';
+            if (val === undefined || val === null || val === '') return '-';
+            return String(val);
+        }
+
+        // 清除會讓 Mermaid 渲染崩潰的特殊字元
+        function sanitizeMermaid(str) {
+            if (!str) return '';
+            return String(str).replace(/["\[\]\(\)\{\}\;\<\>\|\\]/g, ' ').trim();
+        }
+
+        document.getElementById('btn_mask_toggle').addEventListener('click', function() {
+            isMasked = !isMasked;
+            if (isMasked) {
+                this.innerHTML = '<i class="fa-solid fa-eye-slash mr-1.5"></i>去敏: 開啟';
+                this.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                this.classList.add('bg-red-500', 'text-white', 'hover:bg-red-600');
+                showToast('已開啟安全去敏模式，敏感資訊將被遮蔽。', 'success');
+            } else {
+                this.innerHTML = '<i class="fa-solid fa-eye mr-1.5"></i>去敏: 關閉';
+                this.classList.remove('bg-red-500', 'text-white', 'hover:bg-red-600');
+                this.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+            }
+            updateFormMermaidGraph();
+            const recordSelect = document.getElementById('db_record_select');
+            if (recordSelect && recordSelect.value) recordSelect.dispatchEvent(new Event('change'));
+        });
+
+        // ==========================================
         // 模組 1：UI 與表單工具
         // ==========================================
         function showToast(message, type = 'success') {
@@ -469,7 +505,7 @@
         }
 
         function val(id) { return document.getElementById(id).value.trim(); }
-        function setVal(id, v) { document.getElementById(id).value = v || ''; }
+        function setVal(id, v) { document.getElementById(id).value = v !== undefined && v !== null ? v : ''; }
         function getRadioVal(name) { const el = document.querySelector(`input[name="${name}"]:checked`); return el ? el.value : ''; }
         function setRadioVal(name, v) { 
             document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.checked = false);
@@ -477,7 +513,41 @@
         }
 
         // ==========================================
-        // 模組 2：IndexedDB 引擎 (時間排序)
+        // 智慧年齡計算邏輯
+        // ==========================================
+        function calculateAges(dobStr) {
+            if(!dobStr) return { age: '', insAge: '' };
+            const dob = new Date(dobStr);
+            if(isNaN(dob.getTime())) return { age: '', insAge: '' };
+            const today = new Date();
+            let age = today.getFullYear() - dob.getFullYear();
+            let m = today.getMonth() - dob.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+
+            let plus6m = new Date();
+            plus6m.setMonth(plus6m.getMonth() + 6);
+            let insAge = plus6m.getFullYear() - dob.getFullYear();
+            let im = plus6m.getMonth() - dob.getMonth();
+            if (im < 0 || (im === 0 && plus6m.getDate() < dob.getDate())) insAge--;
+            
+            return { age: String(age), insAge: String(insAge) };
+        }
+
+        function autoCalcAge() {
+            const calc = calculateAges(val('c_dob'));
+            if(calc.age !== '') {
+                setVal('c_age', calc.age);
+                setVal('c_ins_age', calc.insAge);
+            }
+        }
+
+        document.getElementById('c_dob').addEventListener('change', function() {
+            autoCalcAge();
+            triggerAutoSave();
+        });
+
+        // ==========================================
+        // 模組 2：IndexedDB 引擎
         // ==========================================
         class CRMDatabase {
             constructor() { this.dbName = 'DreamBlueprintDB_V1'; this.db = null; }
@@ -504,7 +574,7 @@
                     const req = tx.objectStore('records').index('client_uuid').getAll(id);
                     req.onsuccess = () => {
                         let res = req.result || [];
-                        res.sort((a,b) => new Date(a.r_date) - new Date(b.r_date)); // 升冪 (舊->新)
+                        res.sort((a,b) => new Date(a.r_date) - new Date(b.r_date)); 
                         r(res);
                     };
                 });
@@ -514,22 +584,24 @@
         DB.init();
 
         // ==========================================
-        // 模組 3：Mermaid 家族樹引擎
+        // 模組 3：Mermaid 家族樹引擎 (改用嚴格鎖與非同步容器替換修正 Crash)
         // ==========================================
         mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'loose' });
         let familyState = []; let memberCounter = 0;
-        function sanitizeMermaid(text) { return (text || '').replace(/[\[\]\(\)\{\}\"\'\;\|\\]/g, '_'); }
         
-        function compileMermaidSyntax(clientName, clientGender, stateArray) {
+        function compileMermaidSyntax(clientName, clientGender, stateArray, applyMask = false) {
             let syntax = 'graph TD;\n';
             syntax += `classDef maleStyle fill:#dbeafe,stroke:#3b82f6,stroke-width:2px,color:#1e40af;\nclassDef femaleStyle fill:#fce7f3,stroke:#ec4899,stroke-width:2px,color:#be185d;\nclassDef defaultStyle fill:#f3f4f6,stroke:#9ca3af,stroke-width:2px,color:#374151;\nclassDef unionStyle fill:#ffefff,stroke:#ffb3d9,stroke-width:2px,color:#be185d;\nclassDef dotStyle fill:#9ca3af,stroke:#4b5563,stroke-width:1px,color:transparent;\n`;
 
-            const cName = sanitizeMermaid(clientName) || '客戶本人';
+            let cName = sanitizeMermaid(clientName) || '客戶本人';
+            if (applyMask) cName = maskName(cName);
             const cLabel = `${cName}<br><b>(本人)</b>`;
             if (clientGender === 'M') syntax += `Node_0["${cLabel}"]:::maleStyle\n`; else if (clientGender === 'F') syntax += `Node_0(("${cLabel}")):::femaleStyle\n`; else syntax += `Node_0(["${cLabel}"]):::defaultStyle\n`;
 
             stateArray.forEach(m => {
-                const sName = sanitizeMermaid(m.name); const dLabel = m.age ? `${sName}<br>${m.age}歲` : sName;
+                let sName = sanitizeMermaid(m.name) || '未知';
+                if (applyMask) sName = maskName(sName);
+                const dLabel = m.age ? `${sName}<br>${m.age}歲` : sName;
                 if (m.gender === 'M') syntax += `Node_${m.id}["${dLabel}"]:::maleStyle\n`; else if (m.gender === 'F') syntax += `Node_${m.id}(("${dLabel}")):::femaleStyle\n`; else syntax += `Node_${m.id}(["${dLabel}"]):::defaultStyle\n`;
             });
 
@@ -541,24 +613,50 @@
             return syntax;
         }
 
-        async function updateFormMermaidGraph() {
-            const graphDiv = document.getElementById('familyGraph');
-            const cName = val('c_name'); const cGen = val('c_gender');
-            
-            const select = document.getElementById('ft_target'); const currentVal = select.value;
-            let html = `<option value="0">${cName||'客戶本人'} (本人)</option>`;
-            familyState.forEach(m => { html += `<option value="${m.id}">${m.name} (${m.role})</option>`; });
-            select.innerHTML = html; select.value = Array.from(select.options).some(o => o.value === currentVal) ? currentVal : "0";
+        // 使用渲染版本鎖，確保快速輸入時不發生 Race Condition
+        let formMermaidTimer = null;
+        let formRenderVersion = 0;
+        
+        function updateFormMermaidGraph() {
+            clearTimeout(formMermaidTimer);
+            formMermaidTimer = setTimeout(async () => {
+                const currentVersion = ++formRenderVersion;
+                const graphDiv = document.getElementById('familyGraph');
+                const cName = val('c_name'); const cGen = val('c_gender');
+                
+                const select = document.getElementById('ft_target'); const currentVal = select.value;
+                let html = `<option value="0">${sanitizeMermaid(cName)||'客戶本人'} (本人)</option>`;
+                familyState.forEach(m => { html += `<option value="${m.id}">${sanitizeMermaid(m.name)} (${m.role})</option>`; });
+                select.innerHTML = html; select.value = Array.from(select.options).some(o => o.value === currentVal) ? currentVal : "0";
 
-            if (familyState.length === 0 && !cName) { graphDiv.innerHTML = '請先輸入客戶姓名。'; return; }
-            graphDiv.innerHTML = '<div class="skeleton-pulse text-indigo-500">繪製中...</div>';
-            try { const { svg } = await mermaid.render(`mer_${Date.now()}`, compileMermaidSyntax(cName, cGen, familyState)); graphDiv.innerHTML = svg; } catch(e) { graphDiv.innerHTML = '<div class="text-red-500">繪製失敗</div>'; }
+                if (familyState.length === 0 && !cName) { graphDiv.innerHTML = '請先輸入客戶姓名。'; return; }
+                graphDiv.innerHTML = '<div class="skeleton-pulse text-indigo-500">繪製中...</div>';
+                
+                try { 
+                    const uniqueId = `mer_f_${Date.now()}_${Math.floor(Math.random()*100000)}`;
+                    const syntax = compileMermaidSyntax(cName, cGen, familyState, isMasked);
+                    const { svg } = await mermaid.render(uniqueId, syntax); 
+                    
+                    // 確保只渲染最新版本，避免互相覆蓋
+                    if (currentVersion === formRenderVersion) {
+                        requestAnimationFrame(() => {
+                            graphDiv.innerHTML = ''; // 徹底清空，防止舊節點殘留
+                            graphDiv.innerHTML = svg;
+                        });
+                    }
+                } catch(e) { 
+                    console.error("Mermaid Render Error:", e);
+                    if (currentVersion === formRenderVersion) {
+                        graphDiv.innerHTML = '<div class="text-red-500 font-bold">繪製失敗，請檢查輸入內容是否含有特殊符號</div>'; 
+                    }
+                }
+            }, 400); // 延遲，避開連續打字造成的並發崩潰
         }
 
         document.getElementById('ft_add_btn').addEventListener('click', () => {
             const targetId = val('ft_target'); const role = val('ft_role'); const name = val('ft_name'); const gender = val('ft_gender'); const age = val('ft_age');
             if(!name) return showToast('請輸入姓名', 'error');
-            familyState.push({ id: ++memberCounter, targetId, role, name, gender, age });
+            familyState.push({ id: ++memberCounter, targetId, role, name: sanitizeMermaid(name), gender, age });
             setVal('ft_name',''); setVal('ft_age','');
             updateFormMermaidGraph(); triggerAutoSave();
         });
@@ -587,45 +685,67 @@
 
         document.getElementById('btn_force_new').addEventListener('click', () => { clearRecordFields(); showToast('已清空面談欄位，將為您建立全新紀錄！'); });
 
-        async function saveFormDataToDB() {
-            if (!val('c_phone')) return; 
+        async function saveFormDataToDB(isManual = false) {
+            if (!val('c_phone')) {
+                if (isManual) showToast('存檔失敗：請務必填寫「手機號碼」作為客戶識別碼！', 'error');
+                return;
+            }
+            
             syncBadge.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i>儲存中...';
             syncBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 transition-colors';
 
-            let clientUuid = val('current_client_uuid');
-            if (!clientUuid) { const exist = await DB.getClientByPhone(val('c_phone')); clientUuid = exist ? exist.uuid : DB.generateUUID(); setVal('current_client_uuid', clientUuid); }
+            try {
+                let clientUuid = val('current_client_uuid');
+                if (!clientUuid) { const exist = await DB.getClientByPhone(val('c_phone')); clientUuid = exist ? exist.uuid : DB.generateUUID(); setVal('current_client_uuid', clientUuid); }
 
-            let recordId = val('current_record_id'); const today = val('r_date') || new Date().toISOString().split('T')[0];
-            if (!recordId) { recordId = `REC_${clientUuid}_${Date.now()}`; setVal('current_record_id', recordId); updateFormBanner('new', val('c_name')); }
+                let recordId = val('current_record_id'); const today = val('r_date') || new Date().toISOString().split('T')[0];
+                if (!recordId) { recordId = `REC_${clientUuid}_${Date.now()}`; setVal('current_record_id', recordId); updateFormBanner('new', val('c_name')); }
 
-            const clientObj = { uuid: clientUuid, phone: val('c_phone'), name: val('c_name'), gender: val('c_gender'), marital: val('c_marital'), dob: val('c_dob'), job: val('c_job'), last_update: new Date().toISOString() };
-            const recordObj = {
-                record_id: recordId, client_uuid: clientUuid, r_date: today, stage_pre: val('r_stage_pre'), stage_post: val('r_stage_post'),
-                s_work: val('s_work'), s_family: val('s_family'), s_life: val('s_life'), f_income: val('f_income'), f_asset: val('f_asset'), f_risk: val('f_risk'),
-                limra_1: val('limra_1'), limra_2: val('limra_2'), limra_3: val('limra_3'), limra_4: val('limra_4'), limra_5: val('limra_5'),
-                m_1_1: val('m_1_1'), m_1_2: val('m_1_2'), m_1_3: val('m_1_3'), m_1_4: val('m_1_4'),
-                m_2_1: val('m_2_1'), m_2_2: val('m_2_2'), m_2_3: val('m_2_3'), m_2_4: val('m_2_4'),
-                m_3_1: val('m_3_1'), m_3_2: val('m_3_2'), m_3_3: val('m_3_3'), m_3_4: val('m_3_4'),
-                m_4_1: val('m_4_1'), m_4_2: val('m_4_2'), m_4_3: val('m_4_3'), m_4_4: val('m_4_4'),
-                t_now: val('t_now'), t_mid: val('t_mid'), t_long: val('t_long'), 
-                st_issue: val('st_issue'), st_mean: val('st_mean'), st_obj: val('st_obj'),
-                prob: getRadioVal('prob'), fb_client: val('fb_client'), fb_self: val('fb_self'),
-                family_state: JSON.stringify(familyState)
-            };
+                const clientObj = { 
+                    uuid: clientUuid, phone: val('c_phone'), name: val('c_name'), gender: val('c_gender'), 
+                    marital: val('c_marital'), dob: val('c_dob'), age: val('c_age'), ins_age: val('c_ins_age'), 
+                    job: val('c_job'), last_update: new Date().toISOString() 
+                };
+                
+                const recordObj = {
+                    record_id: recordId, client_uuid: clientUuid, r_date: today, stage_pre: val('r_stage_pre'), stage_post: val('r_stage_post'),
+                    s_work: val('s_work'), s_family: val('s_family'), s_life: val('s_life'), f_income: val('f_income'), f_asset: val('f_asset'), f_risk: val('f_risk'),
+                    limra_1: val('limra_1'), limra_2: val('limra_2'), limra_3: val('limra_3'), limra_4: val('limra_4'), limra_5: val('limra_5'),
+                    m_1_1: val('m_1_1'), m_1_2: val('m_1_2'), m_1_3: val('m_1_3'), m_1_4: val('m_1_4'),
+                    m_2_1: val('m_2_1'), m_2_2: val('m_2_2'), m_2_3: val('m_2_3'), m_2_4: val('m_2_4'),
+                    m_3_1: val('m_3_1'), m_3_2: val('m_3_2'), m_3_3: val('m_3_3'), m_3_4: val('m_3_4'),
+                    m_4_1: val('m_4_1'), m_4_2: val('m_4_2'), m_4_3: val('m_4_3'), m_4_4: val('m_4_4'),
+                    t_now: val('t_now'), t_mid: val('t_mid'), t_long: val('t_long'), 
+                    st_issue: val('st_issue'), st_mean: val('st_mean'), st_obj: val('st_obj'),
+                    prob: getRadioVal('prob'), fb_client: val('fb_client'), fb_self: val('fb_self'),
+                    family_state: JSON.stringify(familyState)
+                };
 
-            await DB.saveClient(clientObj); await DB.saveRecord(recordObj);
-            syncBadge.innerHTML = '<i class="fa-solid fa-check-double mr-1.5"></i>已儲存';
-            syncBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 transition-colors';
+                await DB.saveClient(clientObj); await DB.saveRecord(recordObj);
+                
+                syncBadge.innerHTML = '<i class="fa-solid fa-check-double mr-1.5"></i>已儲存';
+                syncBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 transition-colors';
+                if(isManual) showToast('手動存檔成功！');
+            } catch (error) {
+                console.error(error); showToast('資料庫寫入發生錯誤！', 'error');
+            }
         }
 
-        function triggerAutoSave() { clearTimeout(saveTimeout); saveTimeout = setTimeout(saveFormDataToDB, 1500); }
+        document.getElementById('btn_manual_save').addEventListener('click', () => saveFormDataToDB(true));
+        function triggerAutoSave() { clearTimeout(saveTimeout); saveTimeout = setTimeout(() => saveFormDataToDB(false), 1500); }
         document.querySelectorAll('.auto-save-trigger').forEach(el => { el.addEventListener('input', triggerAutoSave); el.addEventListener('change', triggerAutoSave); });
 
         document.getElementById('searchClient').addEventListener('keypress', async (e) => {
             if (e.key === 'Enter') {
                 const c = await DB.getClientByPhone(e.target.value.trim());
                 if (c) {
-                    setVal('c_name', c.name); setVal('c_phone', c.phone); setVal('c_gender', c.gender); setVal('c_marital', c.marital); setVal('c_dob', c.dob); setVal('c_job', c.job); setVal('current_client_uuid', c.uuid); 
+                    let loadAge = c.age; let loadInsAge = c.ins_age;
+                    if (!loadAge && c.dob) { const calc = calculateAges(c.dob); loadAge = calc.age; loadInsAge = calc.insAge; }
+
+                    setVal('c_name', c.name); setVal('c_phone', c.phone); setVal('c_gender', c.gender); 
+                    setVal('c_marital', c.marital); setVal('c_dob', c.dob); setVal('c_age', loadAge); setVal('c_ins_age', loadInsAge); 
+                    setVal('c_job', c.job); setVal('current_client_uuid', c.uuid); 
+                    
                     clearRecordFields();
                     const pastRecords = await DB.getRecordsByClient(c.uuid);
                     if(pastRecords.length > 0) { try { familyState = JSON.parse(pastRecords[pastRecords.length-1].family_state || "[]"); memberCounter = familyState.reduce((max, m) => Math.max(max, m.id), 0); } catch(err) {} } else { familyState = []; memberCounter = 0; }
@@ -635,23 +755,22 @@
         });
 
         document.getElementById('btn_new_client').addEventListener('click', () => {
-            document.querySelectorAll('#form input[type="text"], #form input[type="tel"], #form input[type="date"], #form textarea').forEach(el => el.value = '');
+            document.querySelectorAll('#form input[type="text"], #form input[type="tel"], #form input[type="date"], #form input[type="number"], #form textarea').forEach(el => el.value = '');
             setRadioVal('prob', ''); familyState = []; memberCounter = 0; setVal('current_client_uuid', ''); setVal('current_record_id', '');
             document.getElementById('form_mode_banner').classList.add('hidden'); updateFormMermaidGraph(); showToast('已清空表單');
         });
 
         // ==========================================
-        // 模組 5：個案儀表板 (讀取模式)
+        // 模組 5：個案儀表板 (讀取模式 / 支援去敏)
         // ==========================================
         const selClient = document.getElementById('db_client_select'); const selRecord = document.getElementById('db_record_select'); const btnExport = document.getElementById('btn_export');
         let dashboardCurrentClient = null; let dashboardCurrentRecords = [];
+        let dashboardRenderVersion = 0;
 
         async function loadDashboardClients() {
             const clients = await DB.getAllClients(); selClient.innerHTML = '<option value="">-- 選擇客戶 --</option>';
-            clients.forEach(c => { selClient.innerHTML += `<option value="${c.uuid}">${c.name} (${c.phone})</option>`; });
+            clients.forEach(c => { selClient.innerHTML += `<option value="${c.uuid}">${isMasked ? maskName(c.name) : c.name} (${isMasked ? maskPhone(c.phone) : c.phone})</option>`; });
         }
-
-        function dText(str) { return str ? str : '-'; } // helper for empty strings
 
         selClient.addEventListener('change', async (e) => {
             const uuid = e.target.value; if (!uuid) { resetDashboard(); return; }
@@ -677,24 +796,27 @@
 
             document.getElementById('db_empty_state').classList.add('hidden'); document.getElementById('db_data_view').classList.remove('hidden');
 
-            document.getElementById('view_name').innerText = dText(cli.name); document.getElementById('view_phone').innerText = dText(cli.phone); document.getElementById('view_job').innerText = dText(cli.job);
+            document.getElementById('view_name').innerText = isMasked ? maskName(cli.name) : dText(cli.name); 
+            document.getElementById('view_phone').innerText = isMasked ? maskPhone(cli.phone) : dText(cli.phone); 
+            document.getElementById('view_job').innerText = dText(cli.job);
             document.getElementById('view_marital').innerText = cli.marital === 'M' ? '已婚' : '未婚';
+            
+            let displayAge = cli.age; let displayInsAge = cli.ins_age;
+            if (!displayAge && cli.dob) { const calc = calculateAges(cli.dob); displayAge = calc.age; displayInsAge = calc.insAge; }
+            let dobDisplay = isMasked ? maskDOB(cli.dob) : dText(cli.dob);
+            document.getElementById('view_dob_age').innerText = `生日: ${dobDisplay} (實際: ${dText(displayAge)}歲 | 保險: ${dText(displayInsAge)}歲)`;
+            
             document.getElementById('view_date').innerText = dText(rec.r_date); document.getElementById('view_stage').innerText = `${rec.stage_pre} ➡️ ${rec.stage_post}`;
             
-            // 機率 Badge
             const badge = document.getElementById('view_prob_badge');
             if(rec.prob === '100') { badge.className = 'px-2 py-1 rounded text-xs font-bold text-white bg-green-500'; badge.innerText = '100% (極高)'; }
             else if(rec.prob === '70') { badge.className = 'px-2 py-1 rounded text-xs font-bold text-white bg-blue-500'; badge.innerText = '70% (有機會)'; }
             else if(rec.prob === '30') { badge.className = 'px-2 py-1 rounded text-xs font-bold text-white bg-orange-500'; badge.innerText = '30% (觀望中)'; }
             else { badge.className = 'px-2 py-1 rounded text-xs font-bold text-white bg-gray-400'; badge.innerText = '機率未評估'; }
 
-            // LIMRA
             for(let i=1; i<=5; i++) document.getElementById(`view_limra_${i}`).innerText = dText(rec[`limra_${i}`]);
-            
-            // 4x4 Matrix
             for(let y=1; y<=4; y++) for(let x=1; x<=4; x++) { document.getElementById(`v_m_${y}_${x}`).innerText = dText(rec[`m_${y}_${x}`]); }
 
-            // Other blocks
             document.getElementById('view_status').innerText = `工作: ${dText(rec.s_work)}\n家庭: ${dText(rec.s_family)}\n生活: ${dText(rec.s_life)}`;
             document.getElementById('view_finance').innerText = `收支: ${dText(rec.f_income)}\n資產: ${dText(rec.f_asset)}\n風險: ${dText(rec.f_risk)}`;
             
@@ -706,16 +828,34 @@
             const gDiv = document.getElementById('view_family_graph');
             try {
                 let snapState = JSON.parse(rec.family_state || "[]");
-                if (snapState.length > 0 || cli.name) { const { svg } = await mermaid.render(`view_mer_${Date.now()}`, compileMermaidSyntax(cli.name, cli.gender, snapState)); gDiv.innerHTML = svg; } 
-                else gDiv.innerHTML = '<span class="text-gray-400">當次未紀錄家族圖</span>';
-            } catch(err) { gDiv.innerHTML = '<span class="text-red-400">家族圖解析錯誤</span>'; }
+                if (snapState.length > 0 || cli.name) { 
+                    const currentDashVersion = ++dashboardRenderVersion;
+                    gDiv.innerHTML = '<div class="skeleton-pulse text-indigo-500">繪製中...</div>';
+                    
+                    const syntax = compileMermaidSyntax(cli.name, cli.gender, snapState, isMasked);
+                    const uniqueId = `view_mer_db_${Date.now()}_${Math.floor(Math.random()*100000)}`;
+                    const { svg } = await mermaid.render(uniqueId, syntax); 
+                    
+                    if (currentDashVersion === dashboardRenderVersion) {
+                        requestAnimationFrame(() => {
+                            gDiv.innerHTML = '';
+                            gDiv.innerHTML = svg; 
+                        });
+                    }
+                } else gDiv.innerHTML = '<span class="text-gray-400">當次未紀錄家族圖</span>';
+            } catch(err) { console.error(err); gDiv.innerHTML = '<span class="text-red-400 font-bold">家族圖解析錯誤</span>'; }
         });
 
         document.getElementById('btn_edit_record').addEventListener('click', () => {
             const recId = selRecord.value; const rec = dashboardCurrentRecords.find(r => r.record_id === recId); const cli = dashboardCurrentClient;
             if(!rec || !cli) return;
             
-            setVal('c_name', cli.name); setVal('c_phone', cli.phone); setVal('c_gender', cli.gender); setVal('c_marital', cli.marital); setVal('c_dob', cli.dob); setVal('c_job', cli.job); setVal('current_client_uuid', cli.uuid);
+            let loadAge = cli.age; let loadInsAge = cli.ins_age;
+            if (!loadAge && cli.dob) { const calc = calculateAges(cli.dob); loadAge = calc.age; loadInsAge = calc.insAge; }
+
+            setVal('c_name', cli.name); setVal('c_phone', cli.phone); setVal('c_gender', cli.gender); 
+            setVal('c_marital', cli.marital); setVal('c_dob', cli.dob); setVal('c_age', loadAge); setVal('c_ins_age', loadInsAge); 
+            setVal('c_job', cli.job); setVal('current_client_uuid', cli.uuid);
             setVal('current_record_id', rec.record_id); setVal('r_date', rec.r_date); setVal('r_stage_pre', rec.stage_pre); setVal('r_stage_post', rec.stage_post);
             
             setVal('s_work', rec.s_work); setVal('s_family', rec.s_family); setVal('s_life', rec.s_life);
@@ -739,9 +879,27 @@
         }
 
         btnExport.addEventListener('click', async () => {
-            if(!dashboardCurrentClient) return; const zip = new JSZip(); const cName = dashboardCurrentClient.name || "客戶"; const folder = zip.folder(`${cName}_分析包`);
-            folder.file("01_基本資料.json", JSON.stringify(dashboardCurrentClient, null, 2));
-            dashboardCurrentRecords.forEach((r, idx) => { const seq = String(idx + 1).padStart(2, '0'); folder.file(`02_歷史面談_${seq}_${r.r_date}.json`, JSON.stringify(r, null, 2)); });
+            if(!dashboardCurrentClient) return; const zip = new JSZip(); 
+            const cName = isMasked ? maskName(dashboardCurrentClient.name) : (dashboardCurrentClient.name || "客戶"); 
+            const folder = zip.folder(`${cName}_分析包`);
+            
+            let exportClient = JSON.parse(JSON.stringify(dashboardCurrentClient));
+            if(isMasked) { exportClient.name = maskName(exportClient.name); exportClient.phone = maskPhone(exportClient.phone); exportClient.dob = maskDOB(exportClient.dob); }
+            folder.file("01_基本資料.json", JSON.stringify(exportClient, null, 2));
+            
+            dashboardCurrentRecords.forEach((r, idx) => { 
+                let exportRec = JSON.parse(JSON.stringify(r));
+                if (isMasked && exportRec.family_state) {
+                    try {
+                        let fs = JSON.parse(exportRec.family_state);
+                        fs.forEach(m => { m.name = maskName(m.name); });
+                        exportRec.family_state = JSON.stringify(fs);
+                    } catch(e) {}
+                }
+                const seq = String(idx + 1).padStart(2, '0'); 
+                folder.file(`02_歷史面談_${seq}_${r.r_date}.json`, JSON.stringify(exportRec, null, 2)); 
+            });
+
             const content = await zip.generateAsync({ type: "blob" }); const a = document.createElement("a"); a.href = URL.createObjectURL(content); a.download = `${cName}_CRM_Backup.zip`; a.click(); showToast(`打包 ${cName} 檔案成功！`);
         });
 
